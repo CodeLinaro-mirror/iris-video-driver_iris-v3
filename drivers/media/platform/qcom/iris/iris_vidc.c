@@ -61,8 +61,7 @@ static int iris_add_session(struct iris_inst *inst)
 
 	if (count < core->iris_platform_data->max_session_count)
 		list_add_tail(&inst->list, &core->instances);
-	else
-		ret = -EAGAIN;
+
 unlock:
 	mutex_unlock(&core->lock);
 
@@ -666,7 +665,11 @@ static const struct vb2_ops iris_vb2_ops = {
 	.queue_setup                    = iris_vb2_queue_setup,
 	.start_streaming                = iris_vb2_start_streaming,
 	.stop_streaming                 = iris_vb2_stop_streaming,
+	.buf_prepare                    = iris_vb2_buf_prepare,
+	.buf_out_validate               = iris_vb2_buf_out_validate,
 	.buf_queue                      = iris_vb2_buf_queue,
+	.wait_prepare                   = vb2_ops_wait_prepare,
+	.wait_finish                    = vb2_ops_wait_finish,
 };
 
 static const struct v4l2_ioctl_ops iris_v4l2_ioctl_ops = {

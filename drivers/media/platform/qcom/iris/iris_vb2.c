@@ -64,7 +64,20 @@ static int iris_check_resolution_supported(struct iris_inst *inst)
 
 static int iris_check_session_supported(struct iris_inst *inst)
 {
+	struct iris_core *core = inst->core;
+	struct iris_inst *instance = NULL;
+	bool found = false;
 	int ret;
+
+	list_for_each_entry(instance, &core->instances, list) {
+		if (instance == inst)
+			found = true;
+	}
+
+	if (!found) {
+		ret = -EINVAL;
+		goto exit;
+	}
 
 	ret = iris_check_core_mbpf(inst);
 	if (ret)
@@ -214,6 +227,9 @@ int iris_vb2_start_streaming(struct vb2_queue *q, unsigned int count)
 	if (!inst || !inst->core)
 		return -EINVAL;
 
+	if (V4L2_TYPE_IS_CAPTURE(q->type) && inst->state == IRIS_INST_INIT)
+		return 0;
+
 	mutex_lock(&inst->lock);
 	if (inst->state == IRIS_INST_ERROR) {
 		ret = -EBUSY;
@@ -232,6 +248,7 @@ int iris_vb2_start_streaming(struct vb2_queue *q, unsigned int count)
 	}
 
 	iris_scale_power(inst);
+	inst->sequence_out = 0;
 
 	ret = iris_check_session_supported(inst);
 	if (ret)
@@ -278,6 +295,9 @@ void iris_vb2_stop_streaming(struct vb2_queue *q)
 	if (!inst)
 		return;
 
+	if (V4L2_TYPE_IS_CAPTURE(q->type) && inst->state == IRIS_INST_INIT)
+		return;
+
 	mutex_lock(&inst->lock);
 	if (!iris_allow_streamoff(inst, q->type)) {
 		ret = -EBUSY;
@@ -300,6 +320,40 @@ exit:
 	mutex_unlock(&inst->lock);
 }
 
+int iris_vb2_buf_prepare(struct vb2_buffer *vb)
+{
+	struct iris_inst *inst = vb2_get_drv_priv(vb->vb2_queue);
+	struct vb2_v4l2_buffer *vbuf = to_vb2_v4l2_buffer(vb);
+
+	if (V4L2_TYPE_IS_OUTPUT(vb->vb2_queue->type)) {
+		if (vbuf->field == V4L2_FIELD_ANY)
+			vbuf->field = V4L2_FIELD_NONE;
+		if (vbuf->field != V4L2_FIELD_NONE) {
+			dev_err(inst->core->dev, "%s field isn't supported\n",
+				__func__);
+			return -EINVAL;
+		}
+	}
+
+	if (vb->type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE &&
+	    vb2_plane_size(vb, 0) < iris_get_buffer_size(inst, BUF_OUTPUT))
+		return -EINVAL;
+	if (vb->type == V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE &&
+	    vb2_plane_size(vb, 0) < iris_get_buffer_size(inst, BUF_INPUT))
+		return -EINVAL;
+
+	return 0;
+}
+
+int iris_vb2_buf_out_validate(struct vb2_buffer *vb)
+{
+	struct vb2_v4l2_buffer *v4l2_buf = to_vb2_v4l2_buffer(vb);
+
+	v4l2_buf->field = V4L2_FIELD_NONE;
+
+	return 0;
+}
+
 void iris_vb2_buf_queue(struct vb2_buffer *vb2)
 {
 	static const struct v4l2_event eos = { .type = V4L2_EVENT_EOS };
@@ -318,6 +372,9 @@ void iris_vb2_buf_queue(struct vb2_buffer *vb2)
 		goto exit;
 	}
 
+	if (vbuf->field == V4L2_FIELD_ANY)
+		vbuf->field = V4L2_FIELD_NONE;
+
 	m2m_ctx = inst->m2m_ctx;
 
 	if (!vb2->planes[0].bytesused && V4L2_TYPE_IS_OUTPUT(vb2->type)) {
@@ -331,11 +388,15 @@ void iris_vb2_buf_queue(struct vb2_buffer *vb2)
 		    (inst->sub_state & IRIS_INST_SUB_DRAIN &&
 		     inst->sub_state & IRIS_INST_SUB_DRAIN_LAST)) {
 			vbuf->flags |= V4L2_BUF_FLAG_LAST;
+			vbuf->sequence = inst->sequence_cap++;
 			vbuf->field = V4L2_FIELD_NONE;
 			vb2_set_plane_payload(vb2, 0, 0);
 			v4l2_m2m_buf_done(vbuf, VB2_BUF_STATE_DONE);
-			if (inst->subscriptions & V4L2_EVENT_EOS)
+			if (!v4l2_m2m_has_stopped(m2m_ctx) &&
+			    inst->subscriptions & V4L2_EVENT_EOS) {
 				v4l2_event_queue_fh(&inst->fh, &eos);
+				v4l2_m2m_mark_stopped(m2m_ctx);
+			}
 			goto exit;
 		}
 	}

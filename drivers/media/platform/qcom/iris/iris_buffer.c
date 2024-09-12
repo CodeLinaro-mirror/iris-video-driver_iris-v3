@@ -560,6 +560,7 @@ iris_helper_find_buf(struct iris_inst *inst, unsigned int type, u32 idx)
 
 int iris_vb2_buffer_done(struct iris_inst *inst, struct iris_buffer *buf)
 {
+	struct v4l2_m2m_ctx *m2m_ctx = inst->m2m_ctx;
 	struct vb2_v4l2_buffer *vbuf;
 	struct vb2_buffer *vb2;
 	int type, state;
@@ -582,13 +583,22 @@ int iris_vb2_buffer_done(struct iris_inst *inst, struct iris_buffer *buf)
 	else
 		state = VB2_BUF_STATE_DONE;
 
-	vbuf->flags = buf->flags;
+	vbuf->flags |= buf->flags;
+
+	if (V4L2_TYPE_IS_CAPTURE(type)) {
+		vb2_set_plane_payload(vb2, 0, buf->data_size);
+		vbuf->sequence = inst->sequence_cap++;
+	} else {
+		vbuf->sequence = inst->sequence_out++;
+	}
 
 	if (vbuf->flags & V4L2_BUF_FLAG_LAST) {
-		if (inst->subscriptions & V4L2_EVENT_EOS) {
+		if (!v4l2_m2m_has_stopped(m2m_ctx) &&
+		    inst->subscriptions & V4L2_EVENT_EOS) {
 			const struct v4l2_event ev = { .type = V4L2_EVENT_EOS };
 
-			v4l2_event_queue_fh(&inst->fh, &ev);
+			v4l2_event_queue_fh(&inst->fh, &ev);\
+			v4l2_m2m_mark_stopped(m2m_ctx);
 		}
 	}
 	vb2->timestamp = buf->timestamp;

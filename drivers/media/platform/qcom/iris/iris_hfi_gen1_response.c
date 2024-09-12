@@ -444,9 +444,11 @@ static void iris_hfi_gen1_session_ftb_done(struct iris_inst *inst, void *packet)
 	buf->data_offset = offset;
 	buf->data_size = filled_len;
 
-	if (!(hfi_flags & HFI_BUFFERFLAG_TIMESTAMPINVALID) && filled_len) {
+	if (filled_len) {
 		timestamp_us = timestamp_hi;
 		timestamp_us = (timestamp_us << 32) | timestamp_lo;
+	} else {
+		flags |= V4L2_BUF_FLAG_LAST;
 	}
 	buf->timestamp = timestamp_us;
 
@@ -472,7 +474,7 @@ static void iris_hfi_gen1_session_ftb_done(struct iris_inst *inst, void *packet)
 	buf->attr |= BUF_ATTR_DEQUEUED;
 	buf->attr |= BUF_ATTR_BUFFER_DONE;
 
-	buf->flags = flags;
+	buf->flags |= flags;
 
 	iris_vb2_buffer_done(inst, buf);
 
