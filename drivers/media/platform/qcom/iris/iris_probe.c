@@ -330,9 +330,6 @@ static int iris_pm_suspend(struct device *dev)
 	struct iris_core *core;
 	int ret;
 
-	if (!dev || !dev->driver)
-		return 0;
-
 	core = dev_get_drvdata(dev);
 
 	mutex_lock(&core->lock);
@@ -346,9 +343,6 @@ static int iris_pm_resume(struct device *dev)
 {
 	struct iris_core *core;
 	int ret = 0;
-
-	if (!dev || !dev->driver)
-		return 0;
 
 	core = dev_get_drvdata(dev);
 

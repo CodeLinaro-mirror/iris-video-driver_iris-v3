@@ -85,12 +85,11 @@ struct iris_inst *iris_get_instance(struct iris_core *core, u32 session_id)
 
 	mutex_lock(&core->lock);
 	list_for_each_entry(inst, &core->instances, list) {
-		if (inst->session_id == session_id) {
-			mutex_unlock(&core->lock);
-			return inst;
-		}
+		if (inst->session_id == session_id)
+			goto done;
 	}
-	mutex_unlock(&core->lock);
 
-	return NULL;
+done:
+	mutex_unlock(&core->lock);
+	return inst;
 }
