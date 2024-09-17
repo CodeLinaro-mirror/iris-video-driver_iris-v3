@@ -169,7 +169,7 @@ static int iris_probe(struct platform_device *pdev)
 		goto err_vdev_unreg;
 
 	dma_set_max_seg_size(&pdev->dev, DMA_BIT_MASK(32));
-	dma_set_seg_boundary(&pdev->dev, DMA_BIT_MASK(64));
+	dma_set_seg_boundary(&pdev->dev, DMA_BIT_MASK(32));
 
 	return 0;
 

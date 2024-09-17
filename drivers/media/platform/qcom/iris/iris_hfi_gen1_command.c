@@ -168,7 +168,7 @@ static int iris_hfi_gen1_session_stop(struct iris_inst *inst, u32 plane)
 	struct iris_core *core = inst->core;
 	struct hfi_session_flush_pkt flush_pkt;
 	struct hfi_session_pkt pkt;
-	u32 flush_type;
+	u32 flush_type = 0;
 	int ret = 0;
 
 	if ((V4L2_TYPE_IS_OUTPUT(plane) &&
