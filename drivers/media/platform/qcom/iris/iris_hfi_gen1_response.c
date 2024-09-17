@@ -291,13 +291,16 @@ iris_hfi_gen1_sys_get_prop_image_version(struct iris_core *core,
 
 	req_bytes = pkt->hdr.size - sizeof(*pkt);
 
-	if (req_bytes < IRIS_FW_VERSION_LENGTH - 1 || !pkt->data[0] || pkt->num_properties > 1)
-		/* bad packet */
+	if (req_bytes < IRIS_FW_VERSION_LENGTH - 1 || !pkt->data[0] || pkt->num_properties > 1) {
+		dev_err(core->dev, "bad packet\n");
 		return;
+	}
 
 	str_image_version = pkt->data;
-	if (!str_image_version)
+	if (!str_image_version) {
+		dev_err(core->dev, "firmware version not available\n");
 		return;
+	}
 
 	for (i = 0; i < IRIS_FW_VERSION_LENGTH - 1; i++) {
 		if (str_image_version[i] != '\0')
@@ -308,6 +311,7 @@ iris_hfi_gen1_sys_get_prop_image_version(struct iris_core *core,
 	fw_version[i] = '\0';
 
 	dev_dbg(core->dev, "firmware version: %s\n", fw_version);
+
 }
 
 static void iris_hfi_gen1_sys_property_info(struct iris_core *core, void *packet)
