@@ -115,46 +115,29 @@ static int iris_probe(struct platform_device *pdev)
 	if (core->irq < 0)
 		return core->irq;
 
-	pm_runtime_set_autosuspend_delay(core->dev, AUTOSUSPEND_DELAY_VALUE);
-	pm_runtime_use_autosuspend(core->dev);
-	ret = devm_pm_runtime_enable(core->dev);
-	if (ret) {
-		dev_err(core->dev, "failed to enable runtime pm\n");
-		goto err_runtime_disable;
-	}
+	core->iris_platform_data = of_device_get_match_data(core->dev);
+	if (!core->iris_platform_data)
+		return -EINVAL;
 
 	ret = iris_init_isr(core);
-	if (ret) {
+	if (ret)
 		dev_err_probe(core->dev, ret, "Failed to init isr\n");
-		goto err_runtime_disable;
-	}
-
-	core->iris_platform_data = of_device_get_match_data(core->dev);
-	if (!core->iris_platform_data) {
-		ret = -ENODEV;
-		dev_err_probe(core->dev, ret, "init platform failed\n");
-		goto err_runtime_disable;
-	}
 
 	iris_init_ops(core);
 	core->iris_platform_data->init_hfi_command_ops(core);
 	core->iris_platform_data->init_hfi_response_ops(core);
 
 	ret = iris_init_resources(core);
-	if (ret) {
-		dev_err_probe(core->dev, ret, "init resource failed\n");
-		goto err_runtime_disable;
-	}
+	if (ret)
+		dev_err_probe(core->dev, ret, "Failed to init resources\n");
 
 	ret = iris_session_init_caps(core);
-	if (ret) {
-		dev_err_probe(core->dev, ret, "init inst caps failed\n");
-		goto err_runtime_disable;
-	}
+	if (ret)
+		dev_err_probe(core->dev, ret, "Failed to init caps\n");
 
 	ret = v4l2_device_register(dev, &core->v4l2_dev);
 	if (ret)
-		goto err_runtime_disable;
+		return ret;
 
 	ret = iris_register_video_device(core);
 	if (ret)
@@ -171,14 +154,18 @@ static int iris_probe(struct platform_device *pdev)
 	dma_set_max_seg_size(&pdev->dev, DMA_BIT_MASK(32));
 	dma_set_seg_boundary(&pdev->dev, DMA_BIT_MASK(32));
 
+	pm_runtime_set_autosuspend_delay(core->dev, AUTOSUSPEND_DELAY_VALUE);
+	pm_runtime_use_autosuspend(core->dev);
+	ret = devm_pm_runtime_enable(core->dev);
+	if (ret)
+		goto err_vdev_unreg;
+
 	return 0;
 
 err_vdev_unreg:
 	video_unregister_device(core->vdev_dec);
 err_v4l2_unreg:
 	v4l2_device_unregister(&core->v4l2_dev);
-err_runtime_disable:
-	pm_runtime_set_suspended(core->dev);
 
 	return ret;
 }
