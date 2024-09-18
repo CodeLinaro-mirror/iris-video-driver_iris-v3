@@ -162,14 +162,6 @@ int iris_vb2_queue_setup(struct vb2_queue *q,
 	if (!inst->once_per_session_set) {
 		inst->once_per_session_set = true;
 
-		mutex_lock(&core->lock);
-		if (core->state == IRIS_CORE_ERROR) {
-			mutex_unlock(&core->lock);
-			ret = -EIO;
-			goto unlock;
-		}
-		mutex_unlock(&core->lock);
-
 		ret = core->hfi_ops->session_open(inst);
 		if (ret) {
 			ret = -EINVAL;

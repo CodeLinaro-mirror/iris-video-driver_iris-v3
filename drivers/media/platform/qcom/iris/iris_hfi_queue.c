@@ -121,7 +121,7 @@ int iris_hfi_queue_cmd_write_locked(struct iris_core *core, void *pkt, u32 pkt_s
 {
 	struct iris_iface_q_info *q_info;
 
-	if (core->state != IRIS_CORE_INIT)
+	if (core->state == IRIS_CORE_ERROR)
 		return -EINVAL;
 
 	q_info = &core->command_queue;
@@ -174,18 +174,10 @@ int iris_hfi_queue_msg_read(struct iris_core *core, void *pkt)
 	int ret = 0;
 
 	mutex_lock(&core->lock);
-	if (core->state != IRIS_CORE_INIT) {
-		ret = -EINVAL;
-		goto unlock;
-	}
-
 	q_info = &core->message_queue;
-	if (iris_hfi_queue_read(q_info, pkt)) {
+	if (iris_hfi_queue_read(q_info, pkt))
 		ret = -ENODATA;
-		goto unlock;
-	}
 
-unlock:
 	mutex_unlock(&core->lock);
 
 	return ret;
@@ -197,7 +189,7 @@ int iris_hfi_queue_dbg_read(struct iris_core *core, void *pkt)
 	int ret = 0;
 
 	mutex_lock(&core->lock);
-	if (core->state != IRIS_CORE_INIT) {
+	if (core->state == IRIS_CORE_ERROR) {
 		ret = -EINVAL;
 		goto unlock;
 	}

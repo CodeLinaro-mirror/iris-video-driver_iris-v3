@@ -138,17 +138,12 @@ irqreturn_t iris_hfi_isr_handler(int irq, void *data)
 		return IRQ_NONE;
 
 	mutex_lock(&core->lock);
-	if (core->state != IRIS_CORE_INIT) {
-		mutex_unlock(&core->lock);
-		goto exit;
-	}
 	pm_runtime_mark_last_busy(core->dev);
 	iris_vpu_clear_interrupt(core);
 	mutex_unlock(&core->lock);
 
 	core->hfi_response_ops->hfi_response_handler(core);
 
-exit:
 	if (!iris_vpu_watchdog(core, core->intr_status))
 		enable_irq(irq);
 

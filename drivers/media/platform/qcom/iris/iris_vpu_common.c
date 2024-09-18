@@ -329,9 +329,6 @@ int iris_vpu_power_on(struct iris_core *core)
 	if (core->power_enabled)
 		return 0;
 
-	if (core->state != IRIS_CORE_INIT)
-		return -EINVAL;
-
 	ret = iris_set_icc_bw(core, INT_MAX);
 	if (ret)
 		goto err;

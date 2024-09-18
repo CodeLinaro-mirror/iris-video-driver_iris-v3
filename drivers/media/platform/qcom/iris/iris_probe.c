@@ -331,7 +331,6 @@ static int iris_pm_suspend(struct device *dev)
 	core = dev_get_drvdata(dev);
 
 	mutex_lock(&core->lock);
-
 	if (core->state != IRIS_CORE_INIT)
 		goto exit;
 
