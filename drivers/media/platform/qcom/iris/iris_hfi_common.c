@@ -159,12 +159,6 @@ int iris_hfi_pm_suspend(struct iris_core *core)
 {
 	int ret;
 
-	if (!mutex_is_locked(&core->lock))
-		return -EINVAL;
-
-	if (core->state != IRIS_CORE_INIT)
-		return -EINVAL;
-
 	if (!core->power_enabled) {
 		dev_err(core->dev, "power not enabled\n");
 		return 0;

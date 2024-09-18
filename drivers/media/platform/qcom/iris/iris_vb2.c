@@ -120,12 +120,7 @@ int iris_vb2_queue_setup(struct vb2_queue *q,
 	struct v4l2_format *f;
 	int ret = 0;
 
-	if (!q || !num_buffers || !num_planes || !sizes)
-		return -EINVAL;
-
 	inst = vb2_get_drv_priv(q);
-	if (!inst || !inst->core)
-		return -EINVAL;
 
 	mutex_lock(&inst->lock);
 	if (inst->state == IRIS_INST_ERROR) {
@@ -219,9 +214,6 @@ int iris_vb2_start_streaming(struct vb2_queue *q, unsigned int count)
 	enum iris_buffer_type buf_type;
 	struct iris_inst *inst;
 	int ret = 0;
-
-	if (!q)
-		return -EINVAL;
 
 	inst = vb2_get_drv_priv(q);
 	if (!inst || !inst->core)

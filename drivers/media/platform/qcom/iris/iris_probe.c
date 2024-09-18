@@ -271,8 +271,6 @@ static int iris_probe(struct platform_device *pdev)
 		return core->irq;
 
 	core->iris_platform_data = of_device_get_match_data(core->dev);
-	if (!core->iris_platform_data)
-		return -EINVAL;
 
 	ret = iris_init_isr(core);
 	if (ret)
@@ -333,7 +331,13 @@ static int iris_pm_suspend(struct device *dev)
 	core = dev_get_drvdata(dev);
 
 	mutex_lock(&core->lock);
+
+	if (core->state != IRIS_CORE_INIT)
+		goto exit;
+
 	ret = iris_hfi_pm_suspend(core);
+
+exit:
 	mutex_unlock(&core->lock);
 
 	return ret;

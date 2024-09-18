@@ -776,9 +776,6 @@ static int iris_hfi_gen1_session_set_config_params(struct iris_inst *inst, u32 p
 	config_params = core->iris_platform_data->input_config_params;
 	config_params_size = core->iris_platform_data->input_config_params_size;
 
-	if (!config_params || !config_params_size)
-		return -EINVAL;
-
 	if (V4L2_TYPE_IS_OUTPUT(plane)) {
 		for (i = 0; i < config_params_size; i++) {
 			for (j = 0; j < ARRAY_SIZE(prop_type_handle_inp_arr); j++) {

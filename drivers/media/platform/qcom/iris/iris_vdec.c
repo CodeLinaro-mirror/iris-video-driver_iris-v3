@@ -568,9 +568,6 @@ iris_vdec_vb2_buffer_to_driver(struct vb2_buffer *vb2, struct iris_buffer *buf)
 	struct vb2_v4l2_buffer *vbuf;
 	u32 buf_type;
 
-	if (!vb2 || !buf)
-		return -EINVAL;
-
 	vbuf = to_vb2_v4l2_buffer(vb2);
 
 	buf->fd = vb2->planes[0].m.fd;

@@ -607,9 +607,6 @@ static int iris_hfi_gen2_subscribe_change_param(struct iris_inst *inst, u32 plan
 	change_param = core->iris_platform_data->input_config_params;
 	change_param_size = core->iris_platform_data->input_config_params_size;
 
-	if (!change_param || !change_param_size)
-		return -EINVAL;
-
 	payload[0] = HFI_MODE_PORT_SETTINGS_CHANGE;
 
 	for (i = 0; i < change_param_size; i++)

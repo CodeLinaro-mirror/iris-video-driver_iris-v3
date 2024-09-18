@@ -121,9 +121,6 @@ int iris_hfi_queue_cmd_write_locked(struct iris_core *core, void *pkt, u32 pkt_s
 {
 	struct iris_iface_q_info *q_info;
 
-	if (!mutex_is_locked(&core->lock))
-		return -EINVAL;
-
 	if (core->state != IRIS_CORE_INIT)
 		return -EINVAL;
 

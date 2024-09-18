@@ -176,9 +176,6 @@ int iris_session_init_caps(struct iris_core *core)
 	u32 cap_id;
 
 	inst_plat_cap_data = core->iris_platform_data->inst_fw_cap_data;
-	if (!inst_plat_cap_data)
-		return -EINVAL;
-
 	num_inst_cap = core->iris_platform_data->inst_fw_cap_data_size;
 
 	for (i = 0; i < num_inst_cap && i < INST_FW_CAP_MAX - 1; i++) {

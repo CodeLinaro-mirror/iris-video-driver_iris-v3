@@ -44,9 +44,6 @@ static int iris_load_fw_to_memory(struct iris_core *core, const char *fw_name)
 	int pas_id = 0;
 	int ret;
 
-	if (!fw_name || !(*fw_name) || !core)
-		return -EINVAL;
-
 	dev = core->dev;
 
 	if (strlen(fw_name) >= MAX_FIRMWARE_NAME_SIZE - 4)
