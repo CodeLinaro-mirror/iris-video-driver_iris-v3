@@ -553,6 +553,7 @@ static void iris_hfi_gen1_handle_response(struct iris_core *core, void *response
 {
 	const struct iris_hfi_gen1_response_pkt_info *pkt_info;
 	struct device *dev = core->dev;
+	struct hfi_session_pkt *pkt;
 	struct hfi_pkt_hdr *hdr;
 	struct completion *done;
 	struct iris_inst *inst;
@@ -576,13 +577,14 @@ static void iris_hfi_gen1_handle_response(struct iris_core *core, void *response
 		return;
 	}
 
-	if (hdr->pkt_type == HFI_MSG_SYS_INIT) {
+	switch (hdr->pkt_type) {
+	case HFI_MSG_SYS_INIT:
 		iris_hfi_gen1_sys_init_done(core, hdr);
-	} else if (hdr->pkt_type == HFI_MSG_SYS_PROPERTY_INFO) {
+		break;
+	case HFI_MSG_SYS_PROPERTY_INFO:
 		iris_hfi_gen1_sys_property_info(core, hdr);
-	} else if (hdr->pkt_type == HFI_MSG_EVENT_NOTIFY) {
-		struct hfi_session_pkt *pkt;
-
+		break;
+	case HFI_MSG_EVENT_NOTIFY:
 		pkt = (struct hfi_session_pkt *)hdr;
 		inst = iris_get_instance(core, pkt->shdr.session_id);
 		if (inst) {
@@ -592,9 +594,9 @@ static void iris_hfi_gen1_handle_response(struct iris_core *core, void *response
 		} else {
 			iris_hfi_gen1_sys_event_notify(core, hdr);
 		}
-	} else {
-		struct hfi_session_pkt *pkt;
 
+		break;
+	default:
 		pkt = (struct hfi_session_pkt *)hdr;
 		inst = iris_get_instance(core, pkt->shdr.session_id);
 		if (!inst) {
@@ -621,6 +623,8 @@ static void iris_hfi_gen1_handle_response(struct iris_core *core, void *response
 			complete(done);
 		}
 		mutex_unlock(&inst->lock);
+
+		break;
 	}
 }
 
