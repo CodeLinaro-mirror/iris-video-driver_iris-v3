@@ -11,15 +11,21 @@
 #define UNSPECIFIED_COLOR_FORMAT 5
 #define NUM_SYS_INIT_PACKETS 8
 
+#define SYS_INIT_PKT_SIZE (sizeof(struct iris_hfi_header) + \
+	NUM_SYS_INIT_PACKETS * (sizeof(struct iris_hfi_packet) + sizeof(u32)))
+
+#define SYS_IFPC_PKT_SIZE (sizeof(struct iris_hfi_header) + \
+	sizeof(struct iris_hfi_packet) + sizeof(u32))
+
+#define SYS_PKT_SIZE (sizeof(struct iris_hfi_header) + \
+	sizeof(struct iris_hfi_packet))
+
 static int iris_hfi_gen2_sys_init(struct iris_core *core)
 {
 	struct iris_hfi_header *hdr;
-	u32 packet_size;
 	int ret;
 
-	packet_size = sizeof(*hdr) +
-		NUM_SYS_INIT_PACKETS * (sizeof(struct iris_hfi_packet) + sizeof(u32));
-	hdr = kzalloc(packet_size, GFP_KERNEL);
+	hdr = kzalloc(SYS_INIT_PKT_SIZE, GFP_KERNEL);
 	if (!hdr)
 		return -ENOMEM;
 
@@ -34,11 +40,9 @@ static int iris_hfi_gen2_sys_init(struct iris_core *core)
 static int iris_hfi_gen2_sys_image_version(struct iris_core *core)
 {
 	struct iris_hfi_header *hdr;
-	u32 packet_size;
 	int ret;
 
-	packet_size = sizeof(*hdr) + sizeof(struct iris_hfi_packet);
-	hdr = kzalloc(packet_size, GFP_KERNEL);
+	hdr = kzalloc(SYS_PKT_SIZE, GFP_KERNEL);
 	if (!hdr)
 		return -ENOMEM;
 
@@ -53,11 +57,9 @@ static int iris_hfi_gen2_sys_image_version(struct iris_core *core)
 static int iris_hfi_gen2_sys_interframe_powercollapse(struct iris_core *core)
 {
 	struct iris_hfi_header *hdr;
-	u32 packet_size;
 	int ret;
 
-	packet_size = sizeof(*hdr) + sizeof(struct iris_hfi_packet) + sizeof(u32);
-	hdr = kzalloc(packet_size, GFP_KERNEL);
+	hdr = kzalloc(SYS_IFPC_PKT_SIZE, GFP_KERNEL);
 	if (!hdr)
 		return -ENOMEM;
 
@@ -72,11 +74,9 @@ static int iris_hfi_gen2_sys_interframe_powercollapse(struct iris_core *core)
 static int iris_hfi_gen2_sys_pc_prep(struct iris_core *core)
 {
 	struct iris_hfi_header *hdr;
-	u32 packet_size;
 	int ret;
 
-	packet_size = sizeof(*hdr) + sizeof(struct iris_hfi_packet);
-	hdr = kzalloc(packet_size, GFP_KERNEL);
+	hdr = kzalloc(SYS_PKT_SIZE, GFP_KERNEL);
 	if (!hdr)
 		return -ENOMEM;
 
