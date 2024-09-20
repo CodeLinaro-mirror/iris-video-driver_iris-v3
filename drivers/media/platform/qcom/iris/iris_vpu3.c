@@ -12,10 +12,15 @@
 #define AON_MVP_NOC_RESET			0x0001F000
 
 #define WRAPPER_CORE_CLOCK_CONFIG		(WRAPPER_BASE_OFFS + 0x88)
+#define CORE_CLK_RUN				0x0
 
 #define CPU_CS_AHB_BRIDGE_SYNC_RESET		(CPU_CS_BASE_OFFS + 0x160)
+#define CORE_BRIDGE_SW_RESET			BIT(0)
+#define CORE_BRIDGE_HW_RESET_DISABLE		BIT(1)
 
 #define AON_WRAPPER_MVP_NOC_RESET_REQ		(AON_MVP_NOC_RESET + 0x000)
+#define VIDEO_NOC_RESET_REQ			(BIT(0) | BIT(1))
+
 #define AON_WRAPPER_MVP_NOC_RESET_ACK		(AON_MVP_NOC_RESET + 0x004)
 
 #define VCODEC_SS_IDLE_STATUSN			(VCODEC_BASE_OFFS + 0x70)
@@ -43,7 +48,7 @@ static void iris_vpu3_power_off_hardware(struct iris_core *core)
 
 	value = readl(core->reg_base + WRAPPER_CORE_CLOCK_CONFIG);
 	if (value)
-		writel(0, core->reg_base + WRAPPER_CORE_CLOCK_CONFIG);
+		writel(CORE_CLK_RUN, core->reg_base + WRAPPER_CORE_CLOCK_CONFIG);
 
 	for (i = 0; i < core->iris_platform_data->num_vpp_pipe; i++) {
 		ret = readl_poll_timeout(core->reg_base + VCODEC_SS_IDLE_STATUSN + 4 * i,
@@ -52,7 +57,7 @@ static void iris_vpu3_power_off_hardware(struct iris_core *core)
 			goto disable_power;
 	}
 
-	writel(0x3, core->reg_base + AON_WRAPPER_MVP_NOC_RESET_REQ);
+	writel(VIDEO_NOC_RESET_REQ, core->reg_base + AON_WRAPPER_MVP_NOC_RESET_REQ);
 
 	ret = readl_poll_timeout(core->reg_base + AON_WRAPPER_MVP_NOC_RESET_ACK,
 				 reg_val, reg_val & 0x3, 200, 2000);
@@ -66,8 +71,9 @@ static void iris_vpu3_power_off_hardware(struct iris_core *core)
 	if (ret)
 		goto disable_power;
 
-	writel(0x3, core->reg_base + CPU_CS_AHB_BRIDGE_SYNC_RESET);
-	writel(0x2, core->reg_base + CPU_CS_AHB_BRIDGE_SYNC_RESET);
+	writel(CORE_BRIDGE_SW_RESET | CORE_BRIDGE_HW_RESET_DISABLE,
+	       core->reg_base + CPU_CS_AHB_BRIDGE_SYNC_RESET);
+	writel(CORE_BRIDGE_HW_RESET_DISABLE, core->reg_base + CPU_CS_AHB_BRIDGE_SYNC_RESET);
 	writel(0x0, core->reg_base + CPU_CS_AHB_BRIDGE_SYNC_RESET);
 
 disable_power:

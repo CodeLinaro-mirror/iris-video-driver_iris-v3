@@ -15,6 +15,7 @@
 #define CPU_IC_BASE_OFFS			(CPU_BASE_OFFS)
 
 #define CPU_CS_A2HSOFTINTCLR			(CPU_CS_BASE_OFFS + 0x1C)
+#define CLEAR_XTENSA2HOST_INTR			BIT(0)
 
 #define CTRL_INIT				(CPU_CS_BASE_OFFS + 0x48)
 #define CTRL_STATUS				(CPU_CS_BASE_OFFS + 0x4C)
@@ -31,18 +32,22 @@
 #define UC_REGION_SIZE				(CPU_CS_BASE_OFFS + 0x68)
 
 #define CPU_CS_H2XSOFTINTEN			(CPU_CS_BASE_OFFS + 0x148)
+#define HOST2XTENSA_INTR_EN			BIT(0)
+
 #define CPU_CS_X2RPMH				(CPU_CS_BASE_OFFS + 0x168)
+#define P_WAIT_MODE_MSK				BIT(0)
+#define CORE_POWER_ON_MSK			BIT(1)
 
 #define CPU_IC_SOFTINT				(CPU_IC_BASE_OFFS + 0x150)
 #define CPU_IC_SOFTINT_H2A_SHFT			0x0
 
 #define WRAPPER_INTR_STATUS			(WRAPPER_BASE_OFFS + 0x0C)
-#define WRAPPER_INTR_STATUS_A2HWD_BMSK		0x8
-#define WRAPPER_INTR_STATUS_A2H_BMSK		0x4
+#define WRAPPER_INTR_STATUS_A2HWD_BMSK		BIT(3)
+#define WRAPPER_INTR_STATUS_A2H_BMSK		BIT(2)
 
 #define WRAPPER_INTR_MASK			(WRAPPER_BASE_OFFS + 0x10)
-#define WRAPPER_INTR_MASK_A2HWD_BMSK		0x8
-#define WRAPPER_INTR_MASK_A2HCPU_BMSK		0x4
+#define WRAPPER_INTR_MASK_A2HWD_BMSK		BIT(3)
+#define WRAPPER_INTR_MASK_A2HCPU_BMSK		BIT(2)
 
 #define WRAPPER_DEBUG_BRIDGE_LPI_CONTROL	(WRAPPER_BASE_OFFS + 0x54)
 #define WRAPPER_DEBUG_BRIDGE_LPI_STATUS		(WRAPPER_BASE_OFFS + 0x58)
@@ -51,9 +56,15 @@
 
 #define WRAPPER_TZ_CPU_STATUS			(WRAPPER_TZ_BASE_OFFS + 0x10)
 #define WRAPPER_TZ_CTL_AXI_CLOCK_CONFIG		(WRAPPER_TZ_BASE_OFFS + 0x14)
+#define CTL_AXI_CLK_HALT			BIT(0)
+#define CTL_CLK_HALT				BIT(1)
+
 #define WRAPPER_TZ_QNS4PDXFIFO_RESET		(WRAPPER_TZ_BASE_OFFS + 0x18)
+#define RESET_HIGH				BIT(0)
 
 #define AON_WRAPPER_MVP_NOC_LPI_CONTROL		(AON_BASE_OFFS)
+#define PD_NOC_QREQ				BIT(0)
+
 #define AON_WRAPPER_MVP_NOC_LPI_STATUS		(AON_BASE_OFFS + 0x4)
 
 static void iris_vpu_interrupt_init(struct iris_core *core)
@@ -119,7 +130,7 @@ int iris_vpu_boot_firmware(struct iris_core *core)
 		return -ETIME;
 	}
 
-	writel(0x1, core->reg_base + CPU_CS_H2XSOFTINTEN);
+	writel(HOST2XTENSA_INTR_EN, core->reg_base + CPU_CS_H2XSOFTINTEN);
 	writel(0x0, core->reg_base + CPU_CS_X2RPMH);
 
 	return 0;
@@ -142,7 +153,7 @@ void iris_vpu_clear_interrupt(struct iris_core *core)
 	if (intr_status & mask)
 		core->intr_status |= intr_status;
 
-	writel(1, core->reg_base + CPU_CS_A2HSOFTINTCLR);
+	writel(CLEAR_XTENSA2HOST_INTR, core->reg_base + CPU_CS_A2HSOFTINTCLR);
 }
 
 int iris_vpu_watchdog(struct iris_core *core, u32 intr_status)
@@ -206,16 +217,16 @@ static int iris_vpu_power_off_controller(struct iris_core *core)
 	int val = 0;
 	int ret;
 
-	writel(0x3, core->reg_base + CPU_CS_X2RPMH);
+	writel(P_WAIT_MODE_MSK | CORE_POWER_ON_MSK, core->reg_base + CPU_CS_X2RPMH);
 
-	writel(0x1, core->reg_base + AON_WRAPPER_MVP_NOC_LPI_CONTROL);
+	writel(PD_NOC_QREQ, core->reg_base + AON_WRAPPER_MVP_NOC_LPI_CONTROL);
 
 	ret = readl_poll_timeout(core->reg_base + AON_WRAPPER_MVP_NOC_LPI_STATUS,
 				 val, val & BIT(0), 200, 2000);
 	if (ret)
 		goto disable_power;
 
-	writel(0x1, core->reg_base + WRAPPER_IRIS_CPU_NOC_LPI_CONTROL);
+	writel(PD_NOC_QREQ, core->reg_base + WRAPPER_IRIS_CPU_NOC_LPI_CONTROL);
 
 	ret = readl_poll_timeout(core->reg_base + WRAPPER_IRIS_CPU_NOC_LPI_STATUS,
 				 val, val & BIT(0), 200, 2000);
@@ -229,8 +240,9 @@ static int iris_vpu_power_off_controller(struct iris_core *core)
 	if (ret)
 		goto disable_power;
 
-	writel(0x3, core->reg_base + WRAPPER_TZ_CTL_AXI_CLOCK_CONFIG);
-	writel(0x1, core->reg_base + WRAPPER_TZ_QNS4PDXFIFO_RESET);
+	writel(CTL_AXI_CLK_HALT | CTL_CLK_HALT,
+	       core->reg_base + WRAPPER_TZ_CTL_AXI_CLOCK_CONFIG);
+	writel(RESET_HIGH, core->reg_base + WRAPPER_TZ_QNS4PDXFIFO_RESET);
 	writel(0x0, core->reg_base + WRAPPER_TZ_QNS4PDXFIFO_RESET);
 	writel(0x0, core->reg_base + WRAPPER_TZ_CTL_AXI_CLOCK_CONFIG);
 
