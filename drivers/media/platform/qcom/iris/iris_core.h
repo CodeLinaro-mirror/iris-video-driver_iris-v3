@@ -50,7 +50,6 @@
  * @response_packet: a pointer to response packet from fw to driver
  * @header_id: id of packet header
  * @packet_id: id of packet
- * @power_enabled: a boolean to check if power is on or off
  * @power: a structure for clock and bw information
  * @hfi_ops: iris hfi command ops
  * @hfi_response_ops: iris hfi response ops
@@ -90,7 +89,6 @@ struct iris_core {
 	u8					*response_packet;
 	u32					header_id;
 	u32					packet_id;
-	bool					power_enabled;
 	struct iris_core_power			power;
 	const struct iris_hfi_command_ops	*hfi_ops;
 	const struct iris_hfi_response_ops	*hfi_response_ops;

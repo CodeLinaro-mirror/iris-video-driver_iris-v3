@@ -154,11 +154,6 @@ int iris_hfi_pm_suspend(struct iris_core *core)
 {
 	int ret;
 
-	if (!core->power_enabled) {
-		dev_err(core->dev, "power not enabled\n");
-		return 0;
-	}
-
 	ret = iris_vpu_prepare_pc(core);
 	if (ret) {
 		dev_err(core->dev, "prepare pc ret %d\n", ret);
@@ -170,7 +165,7 @@ int iris_hfi_pm_suspend(struct iris_core *core)
 	if (ret)
 		return ret;
 
-	iris_power_off(core);
+	iris_vpu_power_off(core);
 
 	return 0;
 }
@@ -182,7 +177,7 @@ int iris_hfi_pm_resume(struct iris_core *core)
 
 	ops = core->hfi_ops;
 
-	ret = iris_power_on(core);
+	ret = iris_vpu_power_on(core);
 	if (ret)
 		goto error;
 
@@ -203,7 +198,7 @@ int iris_hfi_pm_resume(struct iris_core *core)
 err_suspend_hw:
 	iris_set_hw_state(core, false);
 err_power_off:
-	iris_power_off(core);
+	iris_vpu_power_off(core);
 error:
 	dev_err(core->dev, "failed to resume\n");
 

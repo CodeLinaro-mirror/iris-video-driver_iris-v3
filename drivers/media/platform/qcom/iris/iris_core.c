@@ -17,7 +17,7 @@ void iris_core_deinit(struct iris_core *core)
 
 	mutex_lock(&core->lock);
 	iris_fw_unload(core);
-	iris_power_off(core);
+	iris_vpu_power_off(core);
 	iris_hfi_queues_deinit(core);
 	core->state = IRIS_CORE_DEINIT;
 	mutex_unlock(&core->lock);
@@ -64,7 +64,7 @@ int iris_core_init(struct iris_core *core)
 	if (ret)
 		goto error;
 
-	ret = iris_power_on(core);
+	ret = iris_vpu_power_on(core);
 	if (ret)
 		goto error_queue_deinit;
 
@@ -87,7 +87,7 @@ int iris_core_init(struct iris_core *core)
 error_unload_fw:
 	iris_fw_unload(core);
 error_power_off:
-	iris_power_off(core);
+	iris_vpu_power_off(core);
 error_queue_deinit:
 	iris_hfi_queues_deinit(core);
 error:

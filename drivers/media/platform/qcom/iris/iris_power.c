@@ -153,30 +153,3 @@ int iris_scale_power(struct iris_inst *inst)
 
 	return iris_vote_interconnects(inst);
 }
-
-void iris_power_off(struct iris_core *core)
-{
-	if (!core->power_enabled)
-		return;
-
-	iris_vpu_power_off(core);
-	core->power_enabled = false;
-}
-
-int iris_power_on(struct iris_core *core)
-{
-	int ret;
-
-	if (core->power_enabled)
-		return 0;
-
-	ret = iris_vpu_power_on(core);
-	if (ret) {
-		dev_err(core->dev, "failed to power on, err: %d\n", ret);
-		return ret;
-	}
-
-	core->power_enabled = true;
-
-	return ret;
-}

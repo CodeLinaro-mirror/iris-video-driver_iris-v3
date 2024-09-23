@@ -263,9 +263,6 @@ void iris_vpu_power_off_hw(struct iris_core *core)
 
 void iris_vpu_power_off(struct iris_core *core)
 {
-	if (!core->power_enabled)
-		return;
-
 	iris_opp_set_rate(core, 0);
 	core->iris_platform_data->vpu_ops->power_off_hw(core);
 	iris_vpu_power_off_controller(core);
@@ -273,8 +270,6 @@ void iris_vpu_power_off(struct iris_core *core)
 
 	if (!iris_vpu_watchdog(core, core->intr_status))
 		disable_irq_nosync(core->irq);
-
-	core->power_enabled = false;
 }
 
 static int iris_vpu_power_on_controller(struct iris_core *core)
@@ -338,9 +333,6 @@ int iris_vpu_power_on(struct iris_core *core)
 	u32 freq = 0;
 	int ret;
 
-	if (core->power_enabled)
-		return 0;
-
 	ret = iris_set_icc_bw(core, INT_MAX);
 	if (ret)
 		goto err;
@@ -352,8 +344,6 @@ int iris_vpu_power_on(struct iris_core *core)
 	ret = iris_vpu_power_on_hw(core);
 	if (ret)
 		goto err_power_off_ctrl;
-
-	core->power_enabled = true;
 
 	freq = core->power.clk_freq ? core->power.clk_freq :
 				      (u32)ULONG_MAX;
@@ -374,7 +364,5 @@ err_power_off_ctrl:
 err_unvote_icc:
 	iris_unset_icc_bw(core);
 err:
-	core->power_enabled = false;
-
 	return ret;
 }
