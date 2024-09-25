@@ -11,39 +11,6 @@
 #include "iris_hfi_gen1_defines.h"
 #include "iris_vpu_common.h"
 
-static struct platform_inst_driver_cap instance_driver_cap_data_sm8250[] = {
-	{
-		.cap_id = FRAME_WIDTH,
-		.min = 128,
-		.max = 8192,
-		.value = 1920,
-	},
-	{
-		.cap_id = FRAME_HEIGHT,
-		.min = 128,
-		.max = 8192,
-		.value = 1920,
-	},
-	{
-		.cap_id = MBPF,
-		.min = 64,
-		.max = 138240,
-		.value = 138240,
-	},
-	{
-		.cap_id = MB_CYCLES_VPP,
-		.min = 200,
-		.max = 200,
-		.value = 200,
-	},
-	{
-		.cap_id = MB_CYCLES_VSP,
-		.min = 25,
-		.max = 25,
-		.value = 25,
-	},
-};
-
 static struct platform_inst_fw_cap instance_fw_cap_data_sm8250[] = {
 	{
 		.cap_id = PIPE,
@@ -52,7 +19,6 @@ static struct platform_inst_fw_cap instance_fw_cap_data_sm8250[] = {
 		.step_or_mask = 1,
 		.value = PIPE_4,
 		.hfi_id = HFI_PROPERTY_PARAM_WORK_ROUTE,
-		.flags = CAP_FLAG_NONE,
 		.set = iris_set_pipe,
 	},
 	{
@@ -62,7 +28,6 @@ static struct platform_inst_fw_cap instance_fw_cap_data_sm8250[] = {
 		.step_or_mask = 1,
 		.value = STAGE_2,
 		.hfi_id = HFI_PROPERTY_PARAM_WORK_MODE,
-		.flags = CAP_FLAG_NONE,
 		.set = iris_set_stage,
 	},
 	{
@@ -72,9 +37,18 @@ static struct platform_inst_fw_cap instance_fw_cap_data_sm8250[] = {
 		.step_or_mask = 1,
 		.value = 0,
 		.hfi_id = HFI_PROPERTY_CONFIG_VDEC_POST_LOOP_DEBLOCKER,
-		.flags = CAP_FLAG_NONE,
 		.set = iris_set_u32,
 	},
+};
+
+static struct platform_inst_caps platform_inst_driver_cap_sm8250 = {
+	.min_frame_width = 128,
+	.max_frame_width = 8192,
+	.min_frame_height = 128,
+	.max_frame_height = 8192,
+	.max_mbpf = 138240,
+	.mb_cycles_vsp = 25,
+	.mb_cycles_vpp = 200,
 };
 
 static void iris_set_sm8250_preset_registers(struct iris_core *core)
@@ -154,8 +128,7 @@ struct iris_platform_data sm8250_data = {
 	.dma_mask = GENMASK(31, 29) - 1,
 	.fwname = "qcom/vpu/vpu20_p4.mbn",
 	.pas_id = IRIS_PAS_ID,
-	.inst_driver_cap_data = instance_driver_cap_data_sm8250,
-	.inst_driver_cap_data_size = ARRAY_SIZE(instance_driver_cap_data_sm8250),
+	.inst_driver_caps = &platform_inst_driver_cap_sm8250,
 	.inst_fw_cap_data = instance_fw_cap_data_sm8250,
 	.inst_fw_cap_data_size = ARRAY_SIZE(instance_fw_cap_data_sm8250),
 	.tz_cp_config_data = &tz_cp_config_sm8250,

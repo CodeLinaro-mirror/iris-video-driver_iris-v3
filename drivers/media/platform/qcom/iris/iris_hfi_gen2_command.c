@@ -886,10 +886,12 @@ static u32 iris_hfi_gen2_buf_type_from_driver(enum iris_buffer_type buffer_type)
 
 static int iris_set_num_comv(struct iris_inst *inst)
 {
+	struct platform_inst_caps *platform_caps;
 	struct iris_core *core = inst->core;
 	u32 num_comv;
 
-	num_comv = inst->driver_cap[NUM_COMV].value;
+	platform_caps = core->iris_platform_data->inst_driver_caps;
+	num_comv = platform_caps->num_comv;
 
 	return core->hfi_ops->session_set_property(inst,
 						   HFI_PROP_COMV_BUFFER_COUNT,

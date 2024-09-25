@@ -375,6 +375,7 @@ unlock:
 static int iris_enum_framesizes(struct file *filp, void *fh,
 				struct v4l2_frmsizeenum *fsize)
 {
+	struct platform_inst_caps *platform_caps;
 	struct iris_inst *inst;
 	int ret = 0;
 
@@ -397,12 +398,14 @@ static int iris_enum_framesizes(struct file *filp, void *fh,
 		goto unlock;
 	}
 
+	platform_caps = inst->core->iris_platform_data->inst_driver_caps;
+
 	fsize->type = V4L2_FRMSIZE_TYPE_STEPWISE;
-	fsize->stepwise.min_width = inst->driver_cap[FRAME_WIDTH].min;
-	fsize->stepwise.max_width = inst->driver_cap[FRAME_WIDTH].max;
+	fsize->stepwise.min_width = platform_caps->min_frame_width;
+	fsize->stepwise.max_width = platform_caps->max_frame_width;
 	fsize->stepwise.step_width = STEP_WIDTH;
-	fsize->stepwise.min_height = inst->driver_cap[FRAME_HEIGHT].min;
-	fsize->stepwise.max_height = inst->driver_cap[FRAME_HEIGHT].max;
+	fsize->stepwise.min_height = platform_caps->min_frame_height;
+	fsize->stepwise.max_height = platform_caps->max_frame_height;
 	fsize->stepwise.step_height = STEP_HEIGHT;
 
 unlock:

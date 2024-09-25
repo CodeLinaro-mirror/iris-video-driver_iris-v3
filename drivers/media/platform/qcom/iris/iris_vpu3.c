@@ -84,10 +84,13 @@ static u64 iris_vpu3_calculate_frequency(struct iris_inst *inst, size_t data_siz
 {
 	u64 vsp_cycles = 0, vpp_cycles = 0, fw_cycles = 0;
 	u64 fw_vpp_cycles = 0, bitrate = 0, freq = 0;
+	struct platform_inst_caps *platform_caps;
 	u32 base_cycles = 0, fps, mbpf;
 	u32 height = 0, width = 0;
 	struct v4l2_format *inp_f;
 	u32 mbs_per_second;
+
+	platform_caps = inst->core->iris_platform_data->inst_driver_caps;
 
 	inp_f = inst->fmt_src;
 	width = max(inp_f->fmt.pix_mp.width, inst->crop.width);
@@ -97,10 +100,10 @@ static u64 iris_vpu3_calculate_frequency(struct iris_inst *inst, size_t data_siz
 	fps = DEFAULT_FPS;
 	mbs_per_second = mbpf * fps;
 
-	fw_cycles = fps * inst->driver_cap[MB_CYCLES_FW].value;
-	fw_vpp_cycles = fps * inst->driver_cap[MB_CYCLES_FW_VPP].value;
+	fw_cycles = fps * platform_caps->mb_cycles_fw;
+	fw_vpp_cycles = fps * platform_caps->mb_cycles_fw_vpp;
 
-	vpp_cycles = mbs_per_second * inst->driver_cap[MB_CYCLES_VPP].value /
+	vpp_cycles = mbs_per_second * platform_caps->mb_cycles_vpp /
 		inst->fw_cap[PIPE].value;
 	vpp_cycles += max(vpp_cycles / 20, fw_vpp_cycles);
 

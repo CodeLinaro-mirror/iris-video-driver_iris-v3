@@ -180,14 +180,17 @@ static u32 iris_output_buffer_size_qc08c(struct iris_inst *inst)
 
 static u32 iris_input_buffer_size(struct iris_inst *inst)
 {
+	struct platform_inst_caps *platform_caps;
 	u32 base_res_mbs = NUM_MBS_4K;
 	u32 frame_size, num_mbs;
 	u32 div_factor;
 
+	platform_caps = inst->core->iris_platform_data->inst_driver_caps;
+
 	num_mbs = iris_get_mbpf(inst);
 	if (num_mbs > NUM_MBS_4K) {
 		div_factor = 4;
-		base_res_mbs = inst->driver_cap[MBPF].value;
+		base_res_mbs = platform_caps->max_mbpf;
 	} else {
 		base_res_mbs = NUM_MBS_4K;
 		div_factor = 2;

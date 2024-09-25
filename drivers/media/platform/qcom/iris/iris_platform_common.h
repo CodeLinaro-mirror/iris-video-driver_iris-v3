@@ -64,18 +64,6 @@ struct ubwc_config_data {
 	u32	bank_spreading;
 };
 
-enum platform_inst_driver_cap_type {
-	FRAME_WIDTH = 1,
-	FRAME_HEIGHT,
-	MBPF,
-	MB_CYCLES_VPP,
-	MB_CYCLES_VSP,
-	MB_CYCLES_FW,
-	MB_CYCLES_FW_VPP,
-	NUM_COMV,
-	INST_DRIVER_CAP_MAX,
-};
-
 enum platform_inst_fw_cap_type {
 	PROFILE = 1,
 	LEVEL,
@@ -92,7 +80,6 @@ enum platform_inst_fw_cap_type {
 };
 
 enum platform_inst_cap_flags {
-	CAP_FLAG_NONE			= 0,
 	CAP_FLAG_DYNAMIC_ALLOWED	= BIT(0),
 	CAP_FLAG_MENU			= BIT(1),
 	CAP_FLAG_INPUT_PORT		= BIT(2),
@@ -102,11 +89,17 @@ enum platform_inst_cap_flags {
 	CAP_FLAG_VOLATILE		= BIT(6),
 };
 
-struct platform_inst_driver_cap {
-	enum platform_inst_driver_cap_type cap_id;
-	u32 min;
-	u32 max;
-	u32 value;
+struct platform_inst_caps {
+	u32 min_frame_width;
+	u32 max_frame_width;
+	u32 min_frame_height;
+	u32 max_frame_height;
+	u32 max_mbpf;
+	u32 mb_cycles_vsp;
+	u32 mb_cycles_vpp;
+	u32 mb_cycles_fw;
+	u32 mb_cycles_fw_vpp;
+	u32 num_comv;
 };
 
 struct platform_inst_fw_cap {
@@ -167,8 +160,7 @@ struct iris_platform_data {
 	u64 dma_mask;
 	const char *fwname;
 	u32 pas_id;
-	struct platform_inst_driver_cap *inst_driver_cap_data;
-	u32 inst_driver_cap_data_size;
+	struct platform_inst_caps *inst_driver_caps;
 	struct platform_inst_fw_cap *inst_fw_cap_data;
 	u32 inst_fw_cap_data_size;
 	struct tz_cp_config *tz_cp_config_data;

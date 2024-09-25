@@ -27,7 +27,6 @@
  * @crop: structure of crop info
  * @completions: structure of signal completions
  * @flush_completions: structure of signal completions for flush cmd
- * @driver_cap: array of supported instance driver capabilities
  * @fw_cap: array of supported instance firmware capabilities
  * @buffers: array of different iris buffers
  * @fw_min_count: minimnum count of buffers needed by fw
@@ -56,8 +55,7 @@ struct iris_inst {
 	struct v4l2_ctrl_handler	ctrl_handler;
 	struct iris_hfi_rect_desc	crop;
 	struct completion		completion;
-	struct completion               flush_completion;
-	struct platform_inst_driver_cap	driver_cap[INST_DRIVER_CAP_MAX];
+	struct completion		flush_completion;
 	struct platform_inst_fw_cap	fw_cap[INST_FW_CAP_MAX];
 	struct iris_buffers		buffers[BUF_TYPE_MAX];
 	u32				fw_min_count;

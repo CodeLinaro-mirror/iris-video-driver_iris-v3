@@ -33,9 +33,11 @@ static int iris_check_core_mbpf(struct iris_inst *inst)
 
 static int iris_check_inst_mbpf(struct iris_inst *inst)
 {
+	struct platform_inst_caps *platform_caps;
 	u32 mbpf, max_mbpf;
 
-	max_mbpf = inst->driver_cap[MBPF].max;
+	platform_caps = inst->core->iris_platform_data->inst_driver_caps;
+	max_mbpf = platform_caps->max_mbpf;
 	mbpf = iris_get_mbpf(inst);
 	if (mbpf > max_mbpf)
 		return -ENOMEM;
@@ -46,14 +48,16 @@ static int iris_check_inst_mbpf(struct iris_inst *inst)
 static int iris_check_resolution_supported(struct iris_inst *inst)
 {
 	u32 width, height, min_width, min_height, max_width, max_height;
+	struct platform_inst_caps *platform_caps;
 
+	platform_caps = inst->core->iris_platform_data->inst_driver_caps;
 	width = inst->fmt_src->fmt.pix_mp.width;
 	height = inst->fmt_src->fmt.pix_mp.height;
 
-	min_width = inst->driver_cap[FRAME_WIDTH].min;
-	max_width = inst->driver_cap[FRAME_WIDTH].max;
-	min_height = inst->driver_cap[FRAME_HEIGHT].min;
-	max_height = inst->driver_cap[FRAME_HEIGHT].max;
+	min_width = platform_caps->min_frame_width;
+	max_width = platform_caps->max_frame_width;
+	min_height = platform_caps->min_frame_height;
+	max_height = platform_caps->max_frame_height;
 
 	if (!(min_width <= width && width <= max_width) ||
 	    !(min_height <= height && height <= max_height))

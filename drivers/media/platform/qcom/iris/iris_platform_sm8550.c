@@ -13,51 +13,6 @@
 
 #define VIDEO_ARCH_LX 1
 
-static struct platform_inst_driver_cap instance_driver_cap_data_sm8550[] = {
-	{
-		.cap_id = FRAME_WIDTH,
-		.min = 96,
-		.max = 8192,
-		.value = 1920,
-	},
-	{
-		.cap_id = FRAME_HEIGHT,
-		.min = 96,
-		.max = 8192,
-		.value = 1920,
-	},
-	{
-		.cap_id = MBPF,
-		.min = 36,
-		.max = 138240,
-		.value = 138240,
-	},
-	{
-		.cap_id = MB_CYCLES_VPP,
-		.min = 200,
-		.max = 200,
-		.value = 200,
-	},
-	{
-		.cap_id = MB_CYCLES_FW,
-		.min = 489583,
-		.max = 489583,
-		.value = 489583,
-	},
-	{
-		.cap_id = MB_CYCLES_FW_VPP,
-		.min = 66234,
-		.max = 66234,
-		.value = 66234,
-	},
-	{
-		.cap_id = NUM_COMV,
-		.min = 0,
-		.max = INT_MAX,
-		.value = 0,
-	},
-};
-
 static struct platform_inst_fw_cap instance_fw_cap_data_sm8550[] = {
 	{
 		.cap_id = PROFILE,
@@ -119,7 +74,6 @@ static struct platform_inst_fw_cap instance_fw_cap_data_sm8550[] = {
 		.step_or_mask = 1,
 		.value = STAGE_2,
 		.hfi_id = HFI_PROP_STAGE,
-		.flags = CAP_FLAG_NONE,
 		.set = iris_set_stage,
 	},
 	{
@@ -129,7 +83,6 @@ static struct platform_inst_fw_cap instance_fw_cap_data_sm8550[] = {
 		.step_or_mask = 1,
 		.value = PIPE_4,
 		.hfi_id = HFI_PROP_PIPE,
-		.flags = CAP_FLAG_NONE,
 		.set = iris_set_pipe,
 	},
 	{
@@ -174,6 +127,18 @@ static struct platform_inst_fw_cap instance_fw_cap_data_sm8550[] = {
 		.flags = CAP_FLAG_INPUT_PORT,
 		.set = iris_set_u32,
 	},
+};
+
+static struct platform_inst_caps platform_inst_driver_cap_sm8550 = {
+	.min_frame_width = 96,
+	.max_frame_width = 8192,
+	.min_frame_height = 96,
+	.max_frame_height = 8192,
+	.max_mbpf = 138240,
+	.mb_cycles_vpp = 200,
+	.mb_cycles_fw = 489583,
+	.mb_cycles_fw_vpp = 66234,
+	.num_comv = 0,
 };
 
 static void iris_set_sm8550_preset_registers(struct iris_core *core)
@@ -279,8 +244,7 @@ struct iris_platform_data sm8550_data = {
 	.dma_mask = GENMASK(31, 29) - 1,
 	.fwname = "qcom/vpu/vpu30_p4.mbn",
 	.pas_id = IRIS_PAS_ID,
-	.inst_driver_cap_data = instance_driver_cap_data_sm8550,
-	.inst_driver_cap_data_size = ARRAY_SIZE(instance_driver_cap_data_sm8550),
+	.inst_driver_caps = &platform_inst_driver_cap_sm8550,
 	.inst_fw_cap_data = instance_fw_cap_data_sm8550,
 	.inst_fw_cap_data_size = ARRAY_SIZE(instance_fw_cap_data_sm8550),
 	.tz_cp_config_data = &tz_cp_config_sm8550,

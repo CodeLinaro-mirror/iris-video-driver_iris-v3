@@ -20,11 +20,8 @@
 
 int iris_vdec_inst_init(struct iris_inst *inst)
 {
-	struct platform_inst_driver_cap *inst_plat_cap_data;
 	struct iris_core *core = inst->core;
 	struct v4l2_format *f;
-	int i, num_inst_cap;
-	u32 cap_id;
 
 	inst->fmt_src  = kzalloc(sizeof(*inst->fmt_src), GFP_KERNEL);
 	inst->fmt_dst  = kzalloc(sizeof(*inst->fmt_dst), GFP_KERNEL);
@@ -63,18 +60,6 @@ int iris_vdec_inst_init(struct iris_inst *inst)
 
 	memcpy(&inst->fw_cap[0], &core->inst_fw_cap[0],
 	       INST_FW_CAP_MAX * sizeof(struct platform_inst_fw_cap));
-
-	inst_plat_cap_data = core->iris_platform_data->inst_driver_cap_data;
-	num_inst_cap = core->iris_platform_data->inst_driver_cap_data_size;
-
-	for (i = 0; i < num_inst_cap && i < INST_DRIVER_CAP_MAX - 1; i++) {
-		cap_id = inst_plat_cap_data[i].cap_id;
-
-		inst->driver_cap[cap_id].cap_id = inst_plat_cap_data[i].cap_id;
-		inst->driver_cap[cap_id].min = inst_plat_cap_data[i].min;
-		inst->driver_cap[cap_id].max = inst_plat_cap_data[i].max;
-		inst->driver_cap[cap_id].value = inst_plat_cap_data[i].value;
-	}
 
 	return iris_ctrls_init(inst);
 }

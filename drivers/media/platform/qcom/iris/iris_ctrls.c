@@ -178,7 +178,7 @@ int iris_session_init_caps(struct iris_core *core)
 	inst_plat_cap_data = core->iris_platform_data->inst_fw_cap_data;
 	num_inst_cap = core->iris_platform_data->inst_fw_cap_data_size;
 
-	for (i = 0; i < num_inst_cap && i < INST_FW_CAP_MAX - 1; i++) {
+	for (i = 0; i < num_inst_cap; i++) {
 		cap_id = inst_plat_cap_data[i].cap_id;
 		if (!iris_valid_cap_id(cap_id))
 			continue;
