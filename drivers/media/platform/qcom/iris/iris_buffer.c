@@ -565,12 +565,16 @@ int iris_vb2_buffer_done(struct iris_inst *inst, struct iris_buffer *buf)
 	struct vb2_buffer *vb2;
 	int type, state;
 
-	if (buf->type == BUF_INPUT)
+	switch (buf->type) {
+	case BUF_INPUT:
 		type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
-	else if (buf->type == BUF_OUTPUT)
+		break;
+	case BUF_OUTPUT:
 		type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-	else
+		break;
+	default:
 		return 0; /* Internal DPB Buffers */
+	}
 
 	vbuf = iris_helper_find_buf(inst, type, buf->index);
 	if (!vbuf)

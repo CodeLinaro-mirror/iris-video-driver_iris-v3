@@ -90,13 +90,18 @@ int iris_vdec_enum_fmt(struct iris_inst *inst, struct v4l2_fmtdesc *f)
 	if (f->index)
 		return -EINVAL;
 
-	if (V4L2_TYPE_IS_OUTPUT(f->type)) {
+	switch (f->type) {
+	case V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:
 		f->pixelformat = V4L2_PIX_FMT_H264;
 		f->flags = V4L2_FMT_FLAG_COMPRESSED | V4L2_FMT_FLAG_DYN_RESOLUTION;
 		strscpy(f->description, "codec", sizeof(f->description));
-	} else if (V4L2_TYPE_IS_CAPTURE(f->type)) {
+		break;
+	case V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
 		f->pixelformat = V4L2_PIX_FMT_NV12;
 		strscpy(f->description, "colorformat", sizeof(f->description));
+		break;
+	default:
+		return -EINVAL;
 	}
 
 	if (!f->pixelformat)
@@ -116,14 +121,16 @@ int iris_vdec_try_fmt(struct iris_inst *inst, struct v4l2_format *f)
 
 	src_q = v4l2_m2m_get_src_vq(m2m_ctx);
 	memset(pixmp->reserved, 0, sizeof(pixmp->reserved));
-	if (V4L2_TYPE_IS_OUTPUT(f->type)) {
+	switch (f->type) {
+	case V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:
 		if (f->fmt.pix_mp.pixelformat != V4L2_PIX_FMT_H264) {
 			f_inst = inst->fmt_src;
 			f->fmt.pix_mp.width = f_inst->fmt.pix_mp.width;
 			f->fmt.pix_mp.height = f_inst->fmt.pix_mp.height;
 			f->fmt.pix_mp.pixelformat = f_inst->fmt.pix_mp.pixelformat;
 		}
-	} else if (V4L2_TYPE_IS_CAPTURE(f->type)) {
+		break;
+	case V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
 		if (f->fmt.pix_mp.pixelformat != V4L2_PIX_FMT_NV12) {
 			f_inst = inst->fmt_dst;
 			f->fmt.pix_mp.pixelformat = f_inst->fmt.pix_mp.pixelformat;
@@ -135,7 +142,8 @@ int iris_vdec_try_fmt(struct iris_inst *inst, struct v4l2_format *f)
 			f->fmt.pix_mp.height = f_inst->fmt.pix_mp.height;
 			f->fmt.pix_mp.width = f_inst->fmt.pix_mp.width;
 		}
-	} else {
+		break;
+	default:
 		return -EINVAL;
 	}
 
@@ -161,7 +169,8 @@ int iris_vdec_s_fmt(struct iris_inst *inst, struct v4l2_format *f)
 
 	iris_vdec_try_fmt(inst, f);
 
-	if (V4L2_TYPE_IS_OUTPUT(f->type)) {
+	switch (f->type) {
+	case V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:
 		if (f->fmt.pix_mp.pixelformat != V4L2_PIX_FMT_H264)
 			return -EINVAL;
 
@@ -195,7 +204,8 @@ int iris_vdec_s_fmt(struct iris_inst *inst, struct v4l2_format *f)
 		inst->crop.top = 0;
 		inst->crop.width = f->fmt.pix_mp.width;
 		inst->crop.height = f->fmt.pix_mp.height;
-	} else if (V4L2_TYPE_IS_CAPTURE(f->type)) {
+		break;
+	case V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
 		fmt = inst->fmt_dst;
 		fmt->type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
 		if (q->streaming) {
@@ -225,7 +235,8 @@ int iris_vdec_s_fmt(struct iris_inst *inst, struct v4l2_format *f)
 			inst->crop.width = f->fmt.pix_mp.width;
 			inst->crop.height = f->fmt.pix_mp.height;
 		}
-	} else {
+		break;
+	default:
 		return -EINVAL;
 	}
 	memcpy(f, fmt, sizeof(*fmt));
@@ -280,21 +291,24 @@ static int iris_vdec_get_num_queued_buffers(struct iris_inst *inst,
 	struct iris_buffer *buf = NULL;
 	int count = 0;
 
-	if (type == BUF_INPUT) {
+	switch (type) {
+	case BUF_INPUT:
 		v4l2_m2m_for_each_src_buf_safe(m2m_ctx, buffer, n) {
 			buf = to_iris_buffer(&buffer->vb);
 			if (!(buf->attr & BUF_ATTR_QUEUED))
 				continue;
 			count++;
 		}
-	} else if (type == BUF_OUTPUT) {
+		break;
+	case BUF_OUTPUT:
 		v4l2_m2m_for_each_dst_buf_safe(m2m_ctx, buffer, n) {
 			buf = to_iris_buffer(&buffer->vb);
 			if (!(buf->attr & BUF_ATTR_QUEUED))
 				continue;
 			count++;
 		}
-	} else {
+		break;
+	default:
 		return count;
 	}
 
@@ -351,12 +365,16 @@ int iris_vdec_session_streamoff(struct iris_inst *inst, u32 plane)
 	int count = 0;
 	int ret;
 
-	if (V4L2_TYPE_IS_OUTPUT(plane))
+	switch (plane) {
+	case V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:
 		buffer_type = BUF_INPUT;
-	else if (V4L2_TYPE_IS_CAPTURE(plane))
+		break;
+	case V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
 		buffer_type = BUF_OUTPUT;
-	else
+		break;
+	default:
 		return -EINVAL;
+	}
 
 	ret = hfi_ops->session_stop(inst, plane);
 	if (ret)
