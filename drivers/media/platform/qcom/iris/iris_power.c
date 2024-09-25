@@ -20,9 +20,6 @@ static u32 iris_calc_bw(struct iris_inst *inst, struct icc_vote_data *data)
 	unsigned int i, mbs, mbps;
 	u32 icc_bw = 0;
 
-	if (!data)
-		goto exit;
-
 	mbs = DIV_ROUND_UP(data->height, 16) * DIV_ROUND_UP(data->width, 16);
 	mbps = mbs * data->fps;
 	if (mbps == 0)

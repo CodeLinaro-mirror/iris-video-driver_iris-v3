@@ -164,8 +164,6 @@ int iris_vdec_s_fmt(struct iris_inst *inst, struct v4l2_format *f)
 	int ret = 0;
 
 	q = v4l2_m2m_get_vq(inst->m2m_ctx, f->type);
-	if (!q)
-		return -EINVAL;
 
 	iris_vdec_try_fmt(inst, f);
 

@@ -125,10 +125,6 @@ int iris_hfi_queue_cmd_write_locked(struct iris_core *core, void *pkt, u32 pkt_s
 		return -EINVAL;
 
 	q_info = &core->command_queue;
-	if (!q_info || !q_info->kernel_vaddr || !pkt) {
-		dev_err(core->dev, "cannot write to shared command queue\n");
-		return -ENODATA;
-	}
 
 	if (!iris_hfi_queue_write(q_info, pkt, pkt_size)) {
 		iris_vpu_raise_interrupt(core);
@@ -195,11 +191,6 @@ int iris_hfi_queue_dbg_read(struct iris_core *core, void *pkt)
 	}
 
 	q_info = &core->debug_queue;
-	if (!q_info || !q_info->kernel_vaddr || !pkt) {
-		dev_err(core->dev, "cannot read from shared debug queue\n");
-		ret = -ENODATA;
-		goto unlock;
-	}
 
 	if (iris_hfi_queue_read(q_info, pkt)) {
 		ret = -ENODATA;
