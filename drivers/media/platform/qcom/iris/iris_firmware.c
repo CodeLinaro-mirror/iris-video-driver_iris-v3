@@ -74,8 +74,7 @@ static int iris_load_fw_to_memory(struct iris_core *core, const char *fw_name)
 	fw_size = qcom_mdt_get_size(firmware);
 	if (fw_size < 0 || res_size < (size_t)fw_size) {
 		ret = -EINVAL;
-		dev_err(core->dev, "out of bound fw image fw size: %d, res_size: %u\n",
-			fw_size, res_size);
+		dev_err(core->dev, "out of bound fw image\n");
 		goto err_release_fw;
 	}
 
