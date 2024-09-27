@@ -264,7 +264,7 @@ static int iris_hfi_gen2_handle_system_error(struct iris_core *core,
 {
 	dev_err(core->dev, "received system error of type %#x\n", pkt->type);
 
-	iris_change_core_state(core, IRIS_CORE_ERROR);
+	core->state = IRIS_CORE_ERROR;
 	schedule_delayed_work(&core->sys_error_handler, msecs_to_jiffies(10));
 
 	return 0;
@@ -274,7 +274,7 @@ static int iris_hfi_gen2_handle_system_init(struct iris_core *core,
 					    struct iris_hfi_packet *pkt)
 {
 	if (!(pkt->flags & HFI_FW_FLAGS_SUCCESS)) {
-		iris_change_core_state(core, IRIS_CORE_ERROR);
+		core->state = IRIS_CORE_ERROR;
 		return 0;
 	}
 
@@ -927,7 +927,7 @@ static void iris_hfi_gen2_response_handler(struct iris_core *core)
 		struct iris_hfi_packet pkt = {.type = HFI_SYS_ERROR_WD_TIMEOUT};
 
 		dev_err(core->dev, "cpu watchdog error received\n");
-		iris_change_core_state(core, IRIS_CORE_ERROR);
+		core->state = IRIS_CORE_ERROR;
 		iris_hfi_gen2_handle_system_error(core, &pkt);
 
 		return;

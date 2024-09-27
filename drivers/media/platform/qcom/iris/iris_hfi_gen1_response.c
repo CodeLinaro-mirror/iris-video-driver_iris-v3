@@ -220,7 +220,7 @@ iris_hfi_gen1_sys_event_notify(struct iris_core *core, void *packet)
 			pkt->event_id, pkt->shdr.session_id, pkt->event_data1,
 			pkt->event_data2);
 
-	iris_change_core_state(core, IRIS_CORE_ERROR);
+	core->state = IRIS_CORE_ERROR;
 	schedule_delayed_work(&core->sys_error_handler, msecs_to_jiffies(10));
 }
 
@@ -273,7 +273,7 @@ static void iris_hfi_gen1_sys_init_done(struct iris_core *core, void *packet)
 	struct hfi_msg_sys_init_done_pkt *pkt = packet;
 
 	if (pkt->error_type != HFI_ERR_NONE) {
-		iris_change_core_state(core, IRIS_CORE_ERROR);
+		core->state = IRIS_CORE_ERROR;
 		return;
 	}
 

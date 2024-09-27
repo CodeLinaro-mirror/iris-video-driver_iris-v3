@@ -127,8 +127,6 @@ enum iris_inst_sub_state {
 	IRIS_INST_SUB_LOAD_RESOURCES	= BIT(7),
 };
 
-void iris_change_core_state(struct iris_core *core,
-			    enum iris_core_state request_state);
 int iris_inst_change_state(struct iris_inst *inst,
 			   enum iris_inst_state request_state);
 int iris_inst_change_sub_state(struct iris_inst *inst,

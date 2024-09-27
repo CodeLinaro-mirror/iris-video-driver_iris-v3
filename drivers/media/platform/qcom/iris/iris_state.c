@@ -5,14 +5,6 @@
 
 #include "iris_instance.h"
 
-void iris_change_core_state(struct iris_core *core,
-			    enum iris_core_state request_state)
-{
-	mutex_lock(&core->lock);
-	core->state = request_state;
-	mutex_unlock(&core->lock);
-}
-
 static bool iris_allow_inst_state_change(struct iris_inst *inst,
 					 enum iris_inst_state req_state)
 {
