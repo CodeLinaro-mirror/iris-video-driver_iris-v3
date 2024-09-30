@@ -620,7 +620,7 @@ int iris_vdec_start_cmd(struct iris_inst *inst)
 	struct vb2_queue *dst_vq;
 	int ret;
 
-	dst_vq = v4l2_m2m_get_vq(inst->m2m_ctx, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE);
+	dst_vq = v4l2_m2m_get_dst_vq(inst->m2m_ctx);
 
 	if (inst->sub_state & IRIS_INST_SUB_DRC &&
 	    inst->sub_state & IRIS_INST_SUB_DRC_LAST) {
