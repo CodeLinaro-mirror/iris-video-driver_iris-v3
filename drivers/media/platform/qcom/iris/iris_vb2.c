@@ -132,11 +132,6 @@ int iris_vb2_queue_setup(struct vb2_queue *q,
 		goto unlock;
 	}
 
-	if (!iris_allow_reqbufs(inst, q->type)) {
-		ret = -EBUSY;
-		goto unlock;
-	}
-
 	core = inst->core;
 	f = V4L2_TYPE_IS_OUTPUT(q->type) ? inst->fmt_src : inst->fmt_dst;
 
@@ -222,11 +217,6 @@ int iris_vb2_start_streaming(struct vb2_queue *q, unsigned int count)
 		goto error;
 	}
 
-	if (!iris_allow_streamon(inst, q->type)) {
-		ret = -EBUSY;
-		goto error;
-	}
-
 	if (!V4L2_TYPE_IS_OUTPUT(q->type) &&
 	    !V4L2_TYPE_IS_CAPTURE(q->type)) {
 		ret = -EINVAL;
@@ -280,10 +270,6 @@ void iris_vb2_stop_streaming(struct vb2_queue *q)
 		return;
 
 	mutex_lock(&inst->lock);
-	if (!iris_allow_streamoff(inst, q->type)) {
-		ret = -EBUSY;
-		goto exit;
-	}
 
 	if (!V4L2_TYPE_IS_OUTPUT(q->type) &&
 	    !V4L2_TYPE_IS_CAPTURE(q->type))

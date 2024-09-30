@@ -4,6 +4,7 @@
  */
 
 #include <linux/types.h>
+#include <media/v4l2-mem2mem.h>
 
 #include "iris_ctrls.h"
 #include "iris_instance.h"
@@ -73,6 +74,7 @@ static int iris_vdec_op_s_ctrl(struct v4l2_ctrl *ctrl)
 	enum platform_inst_fw_cap_type cap_id;
 	struct platform_inst_fw_cap *cap;
 	struct iris_inst *inst;
+	struct vb2_queue *q;
 
 	inst = container_of(ctrl->handler, struct iris_inst, ctrl_handler);
 	cap = &inst->fw_cap[0];
@@ -81,8 +83,10 @@ static int iris_vdec_op_s_ctrl(struct v4l2_ctrl *ctrl)
 	if (!iris_valid_cap_id(cap_id))
 		return -EINVAL;
 
-	if (!iris_allow_s_ctrl(inst, cap_id))
-		return -EBUSY;
+	q = v4l2_m2m_get_src_vq(inst->m2m_ctx);
+	if (vb2_is_streaming(q) &&
+	    (!(inst->fw_cap[cap_id].flags & CAP_FLAG_DYNAMIC_ALLOWED)))
+		return -EINVAL;
 
 	cap[cap_id].flags |= CAP_FLAG_CLIENT_SET;
 

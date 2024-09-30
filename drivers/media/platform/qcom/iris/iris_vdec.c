@@ -593,6 +593,7 @@ int iris_vdec_qbuf(struct iris_inst *inst, struct vb2_v4l2_buffer *vbuf)
 {
 	struct vb2_buffer *vb2 = &vbuf->vb2_buf;
 	struct iris_buffer *buf = NULL;
+	struct vb2_queue *q;
 	int ret = 0;
 
 	buf = to_iris_buffer(vbuf);
@@ -601,7 +602,8 @@ int iris_vdec_qbuf(struct iris_inst *inst, struct vb2_v4l2_buffer *vbuf)
 	if (ret)
 		return ret;
 
-	if (!iris_allow_qbuf(inst, vb2->type)) {
+	q = v4l2_m2m_get_vq(inst->m2m_ctx, vb2->type);
+	if (!vb2_is_streaming(q)) {
 		buf->attr |= BUF_ATTR_DEFERRED;
 		return 0;
 	}
