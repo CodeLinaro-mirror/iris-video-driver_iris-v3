@@ -268,24 +268,12 @@ int iris_close(struct file *filp)
 static int iris_enum_fmt(struct file *filp, void *fh, struct v4l2_fmtdesc *f)
 {
 	struct iris_inst *inst;
-	int ret;
 
 	inst = iris_get_inst(filp, fh);
 	if (!inst)
 		return -EINVAL;
 
-	mutex_lock(&inst->lock);
-	if (inst->state == IRIS_INST_ERROR) {
-		ret = -EBUSY;
-		goto unlock;
-	}
-
-	ret = iris_vdec_enum_fmt(inst, f);
-
-unlock:
-	mutex_unlock(&inst->lock);
-
-	return ret;
+	return iris_vdec_enum_fmt(inst, f);
 }
 
 static int iris_try_fmt_vid_mplane(struct file *filp, void *fh, struct v4l2_format *f)
@@ -377,7 +365,6 @@ static int iris_enum_framesizes(struct file *filp, void *fh,
 {
 	struct platform_inst_caps *platform_caps;
 	struct iris_inst *inst;
-	int ret = 0;
 
 	inst = iris_get_inst(filp, fh);
 	if (!inst || !fsize)
@@ -386,17 +373,9 @@ static int iris_enum_framesizes(struct file *filp, void *fh,
 	if (fsize->index)
 		return -EINVAL;
 
-	mutex_lock(&inst->lock);
-	if (inst->state == IRIS_INST_ERROR) {
-		ret = -EBUSY;
-		goto unlock;
-	}
-
 	if (fsize->pixel_format != V4L2_PIX_FMT_H264 &&
-	    fsize->pixel_format != V4L2_PIX_FMT_NV12) {
-		ret = -EINVAL;
-		goto unlock;
-	}
+	    fsize->pixel_format != V4L2_PIX_FMT_NV12)
+		return -EINVAL;
 
 	platform_caps = inst->core->iris_platform_data->inst_driver_caps;
 
@@ -408,59 +387,37 @@ static int iris_enum_framesizes(struct file *filp, void *fh,
 	fsize->stepwise.max_height = platform_caps->max_frame_height;
 	fsize->stepwise.step_height = STEP_HEIGHT;
 
-unlock:
-	mutex_unlock(&inst->lock);
-
-	return ret;
+	return 0;
 }
 
 static int iris_querycap(struct file *filp, void *fh, struct v4l2_capability *cap)
 {
 	struct iris_inst *inst;
-	int ret = 0;
 
 	inst = iris_get_inst(filp, fh);
 	if (!inst)
 		return -EINVAL;
-
-	mutex_lock(&inst->lock);
-	if (inst->state == IRIS_INST_ERROR) {
-		ret = -EBUSY;
-		goto unlock;
-	}
 
 	strscpy(cap->driver, IRIS_DRV_NAME, sizeof(cap->driver));
 	strscpy(cap->bus_info, IRIS_BUS_NAME, sizeof(cap->bus_info));
 	memset(cap->reserved, 0, sizeof(cap->reserved));
 	strscpy(cap->card, "iris_decoder", sizeof(cap->card));
 
-unlock:
-	mutex_unlock(&inst->lock);
-
-	return ret;
+	return 0;
 }
 
 static int iris_queryctrl(struct file *filp, void *fh, struct v4l2_queryctrl *q_ctrl)
 {
 	struct v4l2_ctrl *ctrl;
 	struct iris_inst *inst;
-	int ret = 0;
 
 	inst = iris_get_inst(filp, fh);
 	if (!inst || !q_ctrl)
 		return -EINVAL;
 
-	mutex_lock(&inst->lock);
-	if (inst->state == IRIS_INST_ERROR) {
-		ret = -EBUSY;
-		goto unlock;
-	}
-
 	ctrl = v4l2_ctrl_find(&inst->ctrl_handler, q_ctrl->id);
-	if (!ctrl) {
-		ret = -EINVAL;
-		goto unlock;
-	}
+	if (!ctrl)
+		return -EINVAL;
 
 	q_ctrl->minimum = ctrl->minimum;
 	q_ctrl->maximum = ctrl->maximum;
@@ -468,75 +425,45 @@ static int iris_queryctrl(struct file *filp, void *fh, struct v4l2_queryctrl *q_
 	q_ctrl->flags = 0;
 	q_ctrl->step = ctrl->step;
 
-unlock:
-	mutex_unlock(&inst->lock);
-
-	return ret;
+	return 0;
 }
 
 static int iris_querymenu(struct file *filp, void *fh, struct v4l2_querymenu *qmenu)
 {
 	struct v4l2_ctrl *ctrl;
 	struct iris_inst *inst;
-	int ret = 0;
 
 	inst = iris_get_inst(filp, fh);
 	if (!inst || !qmenu)
 		return -EINVAL;
 
-	mutex_lock(&inst->lock);
-	if (inst->state == IRIS_INST_ERROR) {
-		ret = -EBUSY;
-		goto unlock;
-	}
-
 	ctrl = v4l2_ctrl_find(&inst->ctrl_handler, qmenu->id);
-	if (!ctrl) {
-		ret = -EINVAL;
-		goto unlock;
-	}
+	if (!ctrl)
+		return -EINVAL;
 
-	if (ctrl->type != V4L2_CTRL_TYPE_MENU) {
-		ret = -EINVAL;
-		goto unlock;
-	}
+	if (ctrl->type != V4L2_CTRL_TYPE_MENU)
+		return -EINVAL;
 
-	if (qmenu->index < ctrl->minimum || qmenu->index > ctrl->maximum) {
-		ret = -EINVAL;
-		goto unlock;
-	}
+	if (qmenu->index < ctrl->minimum || qmenu->index > ctrl->maximum)
+		return -EINVAL;
 
-	if (ctrl->menu_skip_mask & (1 << qmenu->index)) {
-		ret = -EINVAL;
-		goto unlock;
-	}
+	if (ctrl->menu_skip_mask & (1 << qmenu->index))
+		return -EINVAL;
 
-unlock:
-	mutex_unlock(&inst->lock);
-
-	return ret;
+	return 0;
 }
 
 static int iris_g_selection(struct file *filp, void *fh, struct v4l2_selection *s)
 {
 	struct iris_inst *inst;
-	int ret = 0;
 
 	inst = iris_get_inst(filp, fh);
 	if (!inst || !s)
 		return -EINVAL;
 
-	mutex_lock(&inst->lock);
-	if (inst->state == IRIS_INST_ERROR) {
-		ret = -EBUSY;
-		goto unlock;
-	}
-
 	if (s->type != V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE &&
-	    s->type != V4L2_BUF_TYPE_VIDEO_CAPTURE) {
-		ret = -EINVAL;
-		goto unlock;
-	}
+	    s->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)
+		return -EINVAL;
 
 	switch (s->target) {
 	case V4L2_SEL_TGT_CROP_BOUNDS:
@@ -552,55 +479,28 @@ static int iris_g_selection(struct file *filp, void *fh, struct v4l2_selection *
 		s->r.height = inst->crop.height;
 		break;
 	default:
-		ret = -EINVAL;
+		return -EINVAL;
 	}
 
-unlock:
-	mutex_unlock(&inst->lock);
-
-	return ret;
+	return 0;
 }
 
 static int iris_subscribe_event(struct v4l2_fh *fh, const struct v4l2_event_subscription *sub)
 {
 	struct iris_inst *inst;
-	int ret;
 
 	inst = container_of(fh, struct iris_inst, fh);
 
-	mutex_lock(&inst->lock);
-	if (inst->state == IRIS_INST_ERROR) {
-		ret = -EBUSY;
-		goto unlock;
-	}
-
-	ret = iris_vdec_subscribe_event(inst, sub);
-
-unlock:
-	mutex_unlock(&inst->lock);
-
-	return ret;
+	return iris_vdec_subscribe_event(inst, sub);
 }
 
 static int iris_unsubscribe_event(struct v4l2_fh *fh, const struct v4l2_event_subscription *sub)
 {
 	struct iris_inst *inst;
-	int ret;
 
 	inst = container_of(fh, struct iris_inst, fh);
 
-	mutex_lock(&inst->lock);
-	if (inst->state == IRIS_INST_ERROR) {
-		ret = -EBUSY;
-		goto unlock;
-	}
-
-	ret = v4l2_event_unsubscribe(&inst->fh, sub);
-
-unlock:
-	mutex_unlock(&inst->lock);
-
-	return ret;
+	return v4l2_event_unsubscribe(&inst->fh, sub);
 }
 
 static int iris_dec_cmd(struct file *filp, void *fh,
