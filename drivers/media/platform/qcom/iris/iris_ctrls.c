@@ -169,7 +169,7 @@ error:
 	return ret;
 }
 
-int iris_session_init_caps(struct iris_core *core)
+void iris_session_init_caps(struct iris_core *core)
 {
 	struct platform_inst_fw_cap *inst_plat_cap_data;
 	int i, num_inst_cap;
@@ -191,8 +191,6 @@ int iris_session_init_caps(struct iris_core *core)
 		core->inst_fw_cap[cap_id].flags = inst_plat_cap_data[i].flags;
 		core->inst_fw_cap[cap_id].hfi_id = inst_plat_cap_data[i].hfi_id;
 	}
-
-	return 0;
 }
 
 static u32 iris_get_port_info(struct iris_inst *inst,

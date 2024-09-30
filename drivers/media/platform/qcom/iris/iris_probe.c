@@ -36,7 +36,7 @@ static int iris_init_icc(struct iris_core *core)
 
 	ret = devm_of_icc_bulk_get(core->dev, core->icc_count, core->icc_tbl);
 	if (ret)
-		dev_err_probe(core->dev, ret, "failed to get interconnect paths\n");
+		return dev_err_probe(core->dev, ret, "failed to get interconnect paths\n");
 
 	return 0;
 }
@@ -102,7 +102,7 @@ static int iris_init_power_domains(struct iris_core *core)
 
 	ret = devm_pm_opp_of_add_table(core->dev);
 	if (ret)
-		dev_err_probe(core->dev, ret, "failed to add opp table\n");
+		return dev_err_probe(core->dev, ret, "failed to add opp table\n");
 
 	return 0;
 }
@@ -113,7 +113,7 @@ static int iris_init_clocks(struct iris_core *core)
 
 	ret = devm_clk_bulk_get_all(core->dev, &core->clock_tbl);
 	if (ret < 0)
-		dev_err_probe(core->dev, ret, "failed to get bulk clock\n");
+		return dev_err_probe(core->dev, ret, "failed to get bulk clock\n");
 
 	core->clk_count = ret;
 
@@ -140,7 +140,7 @@ static int iris_init_resets(struct iris_core *core)
 
 	ret = devm_reset_control_bulk_get_exclusive(core->dev, rst_tbl_size, core->resets);
 	if (ret)
-		dev_err_probe(core->dev, ret, "failed to get resets\n");
+		return dev_err_probe(core->dev, ret, "failed to get resets\n");
 
 	return 0;
 }
@@ -173,7 +173,7 @@ static inline int iris_init_isr(struct iris_core *core)
 	ret = devm_request_threaded_irq(core->dev, core->irq, iris_hfi_isr,
 					iris_hfi_isr_handler, IRQF_TRIGGER_HIGH, "iris", core);
 	if (ret)
-		dev_err_probe(core->dev, ret, "failed to allocate irq\n");
+		return dev_err_probe(core->dev, ret, "failed to allocate irq\n");
 
 	disable_irq_nosync(core->irq);
 
@@ -274,7 +274,7 @@ static int iris_probe(struct platform_device *pdev)
 
 	ret = iris_init_isr(core);
 	if (ret)
-		dev_err_probe(core->dev, ret, "Failed to init isr\n");
+		return dev_err_probe(core->dev, ret, "failed to init isr\n");
 
 	iris_init_ops(core);
 	core->iris_platform_data->init_hfi_command_ops(core);
@@ -282,11 +282,9 @@ static int iris_probe(struct platform_device *pdev)
 
 	ret = iris_init_resources(core);
 	if (ret)
-		dev_err_probe(core->dev, ret, "Failed to init resources\n");
+		return dev_err_probe(core->dev, ret, "failed to init resources\n");
 
-	ret = iris_session_init_caps(core);
-	if (ret)
-		dev_err_probe(core->dev, ret, "Failed to init caps\n");
+	iris_session_init_caps(core);
 
 	ret = v4l2_device_register(dev, &core->v4l2_dev);
 	if (ret)
