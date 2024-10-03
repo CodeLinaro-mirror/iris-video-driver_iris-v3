@@ -25,6 +25,8 @@
 #define CTRL_STATUS_PC_READY			0x100
 
 #define QTBL_INFO				(CPU_CS_BASE_OFFS + 0x50)
+#define QTBL_ENABLE				BIT(0)
+
 #define QTBL_ADDR				(CPU_CS_BASE_OFFS + 0x54)
 #define CPU_CS_SCIACMDARG3			(CPU_CS_BASE_OFFS + 0x58)
 #define SFR_ADDR				(CPU_CS_BASE_OFFS + 0x5C)
@@ -32,11 +34,11 @@
 #define UC_REGION_SIZE				(CPU_CS_BASE_OFFS + 0x68)
 
 #define CPU_CS_H2XSOFTINTEN			(CPU_CS_BASE_OFFS + 0x148)
-#define HOST2XTENSA_INTR_EN			BIT(0)
+#define HOST2XTENSA_INTR_ENABLE			BIT(0)
 
 #define CPU_CS_X2RPMH				(CPU_CS_BASE_OFFS + 0x168)
-#define P_WAIT_MODE_MSK				BIT(0)
-#define CORE_POWER_ON_MSK			BIT(1)
+#define MSK_SIGNAL_FROM_TENSILICA		BIT(0)
+#define MSK_CORE_POWER_ON			BIT(1)
 
 #define CPU_IC_SOFTINT				(CPU_IC_BASE_OFFS + 0x150)
 #define CPU_IC_SOFTINT_H2A_SHFT			0x0
@@ -63,7 +65,7 @@
 #define RESET_HIGH				BIT(0)
 
 #define AON_WRAPPER_MVP_NOC_LPI_CONTROL		(AON_BASE_OFFS)
-#define PD_NOC_QREQ				BIT(0)
+#define REQ_POWER_DOWN_PREP			BIT(0)
 
 #define AON_WRAPPER_MVP_NOC_LPI_STATUS		(AON_BASE_OFFS + 0x4)
 
@@ -95,7 +97,7 @@ static void iris_vpu_setup_ucregion_memory_map(struct iris_core *core)
 	value = (u32)core->iface_q_table_daddr;
 	writel(value, core->reg_base + QTBL_ADDR);
 
-	writel(0x01, core->reg_base + QTBL_INFO);
+	writel(QTBL_ENABLE, core->reg_base + QTBL_INFO);
 
 	if (core->sfr_daddr) {
 		value = (u32)core->sfr_daddr + core->iris_platform_data->core_arch;
@@ -130,7 +132,7 @@ int iris_vpu_boot_firmware(struct iris_core *core)
 		return -ETIME;
 	}
 
-	writel(HOST2XTENSA_INTR_EN, core->reg_base + CPU_CS_H2XSOFTINTEN);
+	writel(HOST2XTENSA_INTR_ENABLE, core->reg_base + CPU_CS_H2XSOFTINTEN);
 	writel(0x0, core->reg_base + CPU_CS_X2RPMH);
 
 	return 0;
@@ -217,16 +219,16 @@ static int iris_vpu_power_off_controller(struct iris_core *core)
 	int val = 0;
 	int ret;
 
-	writel(P_WAIT_MODE_MSK | CORE_POWER_ON_MSK, core->reg_base + CPU_CS_X2RPMH);
+	writel(MSK_SIGNAL_FROM_TENSILICA | MSK_CORE_POWER_ON, core->reg_base + CPU_CS_X2RPMH);
 
-	writel(PD_NOC_QREQ, core->reg_base + AON_WRAPPER_MVP_NOC_LPI_CONTROL);
+	writel(REQ_POWER_DOWN_PREP, core->reg_base + AON_WRAPPER_MVP_NOC_LPI_CONTROL);
 
 	ret = readl_poll_timeout(core->reg_base + AON_WRAPPER_MVP_NOC_LPI_STATUS,
 				 val, val & BIT(0), 200, 2000);
 	if (ret)
 		goto disable_power;
 
-	writel(PD_NOC_QREQ, core->reg_base + WRAPPER_IRIS_CPU_NOC_LPI_CONTROL);
+	writel(REQ_POWER_DOWN_PREP, core->reg_base + WRAPPER_IRIS_CPU_NOC_LPI_CONTROL);
 
 	ret = readl_poll_timeout(core->reg_base + WRAPPER_IRIS_CPU_NOC_LPI_STATUS,
 				 val, val & BIT(0), 200, 2000);
