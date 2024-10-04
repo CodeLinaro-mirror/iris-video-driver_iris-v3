@@ -467,9 +467,11 @@ int iris_alloc_and_queue_persist_bufs(struct iris_inst *inst)
 	int ret = 0;
 	int i = 0;
 
-	iris_fill_internal_buf_info(inst, BUF_PERSIST);
-
 	buffers = &inst->buffers[BUF_PERSIST];
+	if (!list_empty(&buffers->list))
+		return 0;
+
+	iris_fill_internal_buf_info(inst, BUF_PERSIST);
 
 	for (i = 0; i < buffers->min_count; i++) {
 		ret = iris_create_internal_buffer(inst, BUF_PERSIST, i);
@@ -561,26 +563,31 @@ iris_helper_find_buf(struct iris_inst *inst, unsigned int type, u32 idx)
 		return v4l2_m2m_dst_buf_remove_by_idx(m2m_ctx, idx);
 }
 
-static struct vb2_v4l2_buffer *
-iris_helper_find_src_buffer(struct iris_inst *inst, struct iris_buffer *dst_buf)
+static void iris_get_ts_metadata(struct iris_inst *inst, u64 timestamp_ns,
+				 struct vb2_v4l2_buffer *vbuf)
 {
-	struct v4l2_m2m_ctx *m2m_ctx = inst->m2m_ctx;
-	struct v4l2_m2m_buffer *buffer, *n;
-	struct iris_buffer *src_buf = NULL;
+	u32 mask = V4L2_BUF_FLAG_TIMECODE | V4L2_BUF_FLAG_TSTAMP_SRC_MASK;
+	unsigned int i;
 
-	v4l2_m2m_for_each_src_buf_safe(m2m_ctx, buffer, n) {
-		src_buf = to_iris_buffer(&buffer->vb);
-		if (src_buf->timestamp == dst_buf->timestamp)
-			return &buffer->vb;
+	for (i = 0; i < ARRAY_SIZE(inst->tss); ++i) {
+		if (inst->tss[i].ts_ns != timestamp_ns)
+			continue;
+
+		vbuf->flags &= ~mask;
+		vbuf->flags |= inst->tss[i].flags;
+		vbuf->timecode = inst->tss[i].tc;
+		return;
 	}
 
-	return 0;
+	vbuf->flags &= ~mask;
+	vbuf->flags |= inst->tss[inst->metadata_idx].flags;
+	vbuf->timecode = inst->tss[inst->metadata_idx].tc;
 }
 
 int iris_vb2_buffer_done(struct iris_inst *inst, struct iris_buffer *buf)
 {
 	struct v4l2_m2m_ctx *m2m_ctx = inst->m2m_ctx;
-	struct vb2_v4l2_buffer *vbuf, *src_vbuf;
+	struct vb2_v4l2_buffer *vbuf;
 	struct vb2_buffer *vb2;
 	int type, state;
 
@@ -611,11 +618,7 @@ int iris_vb2_buffer_done(struct iris_inst *inst, struct iris_buffer *buf)
 	if (V4L2_TYPE_IS_CAPTURE(type)) {
 		vb2_set_plane_payload(vb2, 0, buf->data_size);
 		vbuf->sequence = inst->sequence_cap++;
-		vbuf->sequence = inst->sequence_out++;
-
-		src_vbuf = iris_helper_find_src_buffer(inst, buf);
-		if (src_vbuf)
-			v4l2_m2m_buf_copy_metadata(src_vbuf, vbuf, true);
+		iris_get_ts_metadata(inst, buf->timestamp, vbuf);
 	} else {
 		vbuf->sequence = inst->sequence_out++;
 	}

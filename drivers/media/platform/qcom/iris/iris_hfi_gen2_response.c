@@ -315,7 +315,6 @@ static int iris_hfi_gen2_handle_input_buffer(struct iris_inst *inst,
 	if (!(buf->attr & BUF_ATTR_QUEUED))
 		return -EINVAL;
 
-	buf->data_size = buffer->data_size;
 	buf->attr &= ~BUF_ATTR_QUEUED;
 	buf->attr |= BUF_ATTR_DEQUEUED;
 

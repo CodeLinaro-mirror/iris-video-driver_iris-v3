@@ -360,7 +360,6 @@ static void iris_hfi_gen1_session_etb_done(struct iris_inst *inst, void *packet)
 	if (!(buf->attr & BUF_ATTR_QUEUED))
 		return;
 
-	buf->data_size = pkt->filled_len;
 	buf->attr &= ~BUF_ATTR_QUEUED;
 
 	if (!(buf->attr & BUF_ATTR_BUFFER_DONE)) {

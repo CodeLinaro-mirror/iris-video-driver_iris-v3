@@ -23,6 +23,13 @@ struct iris_hfi_frame_info {
 	u32 overflow;
 };
 
+struct iris_ts_metadata {
+	u64 ts_ns;
+	u64 ts_us;
+	u32 flags;
+	struct v4l2_timecode tc;
+};
+
 #define NUM_MBS_PER_FRAME(height, width) \
 	(DIV_ROUND_UP(height, 16) * DIV_ROUND_UP(width, 16))
 
