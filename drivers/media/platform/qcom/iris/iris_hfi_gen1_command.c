@@ -54,7 +54,7 @@ static int iris_hfi_gen1_sys_interframe_powercollapse(struct iris_core *core)
 	struct hfi_sys_set_property_pkt *pkt;
 	struct hfi_enable *hfi;
 	u32 packet_size;
-	u32 ret;
+	int ret;
 
 	packet_size = struct_size(pkt, data, 1) + sizeof(*hfi);
 	pkt = kzalloc(packet_size, GFP_KERNEL);
@@ -165,11 +165,11 @@ static int iris_hfi_gen1_session_start(struct iris_inst *inst, u32 plane)
 
 static int iris_hfi_gen1_session_stop(struct iris_inst *inst, u32 plane)
 {
-	struct iris_core *core = inst->core;
 	struct hfi_session_flush_pkt flush_pkt;
+	struct iris_core *core = inst->core;
 	struct hfi_session_pkt pkt;
 	u32 flush_type = 0;
-	int ret = 0;
+	int ret;
 
 	if ((V4L2_TYPE_IS_OUTPUT(plane) &&
 	     inst->state == IRIS_INST_INPUT_STREAMING) ||
@@ -212,7 +212,7 @@ static int iris_hfi_gen1_session_stop(struct iris_inst *inst, u32 plane)
 			ret = iris_wait_for_session_response(inst, true);
 	}
 
-	return ret;
+	return 0;
 }
 
 static int iris_hfi_gen1_session_continue(struct iris_inst *inst, u32 plane)
@@ -324,8 +324,7 @@ static int iris_hfi_gen1_session_queue_buffer(struct iris_inst *inst, struct iri
 static int iris_hfi_gen1_session_unset_buffers(struct iris_inst *inst, struct iris_buffer *buf)
 {
 	struct hfi_session_release_buffer_pkt *pkt;
-	unsigned int buffer_type = 0, i;
-	u32 packet_size;
+	u32 packet_size, buffer_type, i;
 	int ret;
 
 	buffer_type = iris_hfi_gen1_buf_type_from_driver(buf->type);
@@ -395,9 +394,7 @@ static int
 iris_hfi_gen1_packet_session_set_property(struct hfi_session_set_property_pkt *packet,
 					  struct iris_inst *inst, u32 ptype, void *pdata)
 {
-	void *prop_data;
-
-	prop_data = &packet->data[1];
+	void *prop_data = &packet->data[1];;
 
 	packet->shdr.hdr.size = sizeof(*packet);
 	packet->shdr.hdr.pkt_type = HFI_CMD_SESSION_SET_PROPERTY;
@@ -431,6 +428,7 @@ iris_hfi_gen1_packet_session_set_property(struct hfi_session_set_property_pkt *p
 		packet->shdr.hdr.size += sizeof(u32) + sizeof(*hfi);
 		break;
 	}
+	// TODO: VN: Check and remove
 	case HFI_PROPERTY_PARAM_UNCOMPRESSED_PLANE_ACTUAL_CONSTRAINTS_INFO: {
 		struct hfi_uncompressed_plane_actual_constraints_info *info = prop_data;
 
@@ -577,10 +575,9 @@ static int iris_hfi_gen1_decide_core(struct iris_inst *inst)
 static int iris_hfi_gen1_set_raw_format(struct iris_inst *inst)
 {
 	const u32 ptype = HFI_PROPERTY_PARAM_UNCOMPRESSED_FORMAT_SELECT;
+	u32 pixelformat = inst->fmt_dst->fmt.pix_mp.pixelformat;
 	struct hfi_uncompressed_format_select fmt;
-	u32 pixelformat, ret;
-
-	pixelformat = inst->fmt_dst->fmt.pix_mp.pixelformat;
+	int ret;
 
 	if (iris_split_mode_enabled(inst)) {
 		fmt.buffer_type = HFI_BUFFER_OUTPUT;
@@ -736,10 +733,9 @@ static int iris_hfi_gen1_set_bufsize(struct iris_inst *inst)
 static int iris_hfi_gen1_session_set_config_params(struct iris_inst *inst, u32 plane)
 {
 	struct iris_core *core = inst->core;
+	u32 config_params_size, i, j;
 	const u32 *config_params;
-	u32 config_params_size;
-	int ret = 0;
-	u32 i, j;
+	int ret;
 
 	static const struct iris_hfi_prop_type_handle prop_type_handle_inp_arr[] = {
 		{HFI_PROPERTY_PARAM_FRAME_SIZE,
@@ -800,7 +796,7 @@ static int iris_hfi_gen1_session_set_config_params(struct iris_inst *inst, u32 p
 		}
 	}
 
-	return ret;
+	return 0;
 }
 
 static const struct iris_hfi_command_ops iris_hfi_gen1_command_ops = {

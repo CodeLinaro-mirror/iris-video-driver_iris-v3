@@ -15,30 +15,25 @@
 static void iris_hfi_gen1_read_changed_params(struct iris_inst *inst,
 					      struct hfi_msg_event_notify_pkt *pkt)
 {
-	struct v4l2_pix_format_mplane *pixmp_ip, *pixmp_op;
+	struct v4l2_pix_format_mplane *pixmp_ip = &inst->fmt_src->fmt.pix_mp;
+	struct v4l2_pix_format_mplane *pixmp_op = &inst->fmt_dst->fmt.pix_mp;
+	int num_properties_changed = pkt->event_data2;
+	u8 *data_ptr = (u8 *)&pkt->ext_event_data[0];
 	u32 primaries, matrix_coeff, transfer_char;
 	struct hfi_dpb_counts *iris_vpu_dpb_count;
 	struct hfi_profile_level *profile_level;
-	u32 colour_description_present_flag = 0;
 	struct hfi_buffer_requirements *bufreq;
-	u32 video_signal_type_present_flag = 0;
 	struct hfi_extradata_input_crop *crop;
 	struct hfi_colour_space *colour_info;
 	struct iris_core *core = inst->core;
+	u32 colour_description_present_flag;
+	u32 video_signal_type_present_flag;
 	struct hfi_event_data event = {0};
 	struct hfi_bit_depth *pixel_depth;
 	struct hfi_pic_struct *pic_struct;
 	struct hfi_framesize *frame_sz;
-	int num_properties_changed;
-	u32 full_range = 0;
-	u8 *data_ptr;
-	u32 ptype;
+	u32 full_range, ptype;
 
-	pixmp_ip = &inst->fmt_src->fmt.pix_mp;
-	pixmp_op = &inst->fmt_dst->fmt.pix_mp;
-	num_properties_changed = pkt->event_data2;
-
-	data_ptr = (u8 *)&pkt->ext_event_data[0];
 	do {
 		ptype = *((u32 *)data_ptr);
 		switch (ptype) {
@@ -172,7 +167,7 @@ static void iris_hfi_gen1_event_seq_changed(struct iris_inst *inst,
 					    struct hfi_msg_event_notify_pkt *pkt)
 {
 	struct hfi_session_flush_pkt flush_pkt;
-	int num_properties_changed;
+	u32 num_properties_changed;
 	int ret;
 
 	ret = iris_inst_sub_state_change_drc(inst);
@@ -284,12 +279,10 @@ static void
 iris_hfi_gen1_sys_get_prop_image_version(struct iris_core *core,
 					 struct hfi_msg_sys_property_info_pkt *pkt)
 {
+	int req_bytes = pkt->hdr.size - sizeof(*pkt);
 	char fw_version[IRIS_FW_VERSION_LENGTH];
 	u8 *str_image_version;
-	int req_bytes;
 	u32 i;
-
-	req_bytes = pkt->hdr.size - sizeof(*pkt);
 
 	if (req_bytes < IRIS_FW_VERSION_LENGTH - 1 || !pkt->data[0] || pkt->num_properties > 1) {
 		dev_err(core->dev, "bad packet\n");
@@ -309,9 +302,7 @@ iris_hfi_gen1_sys_get_prop_image_version(struct iris_core *core,
 			fw_version[i] = ' ';
 	}
 	fw_version[i] = '\0';
-
 	dev_dbg(core->dev, "firmware version: %s\n", fw_version);
-
 }
 
 static void iris_hfi_gen1_sys_property_info(struct iris_core *core, void *packet)
@@ -377,25 +368,22 @@ error:
 static void iris_hfi_gen1_session_ftb_done(struct iris_inst *inst, void *packet)
 {
 	struct hfi_msg_session_fbd_uncompressed_plane0_pkt *pkt = packet;
-	u32 flags = 0, hfi_flags = 0, offset = 0, filled_len = 0;
 	struct v4l2_m2m_ctx *m2m_ctx = inst->m2m_ctx;
 	struct v4l2_m2m_buffer *m2m_buffer, *n;
-	u32 timestamp_hi = 0, timestamp_lo = 0;
 	struct hfi_session_flush_pkt flush_pkt;
-	struct iris_buffer *buf = NULL, *iter;
+	u32 timestamp_hi = pkt->time_stamp_hi;
+	u32 timestamp_lo = pkt->time_stamp_lo;
 	struct iris_core *core = inst->core;
-	u32 pic_type = 0, output_tag = -1;
+	u32 filled_len = pkt->filled_len;
+	u32 pic_type = pkt->picture_type;
+	u32 output_tag = pkt->output_tag;
+	struct iris_buffer *buf, *iter;
 	struct iris_buffers *buffers;
+	u32 hfi_flags = pkt->flags;
+	u32 offset = pkt->offset;
 	u64 timestamp_us = 0;
 	bool found = false;
-
-	timestamp_hi = pkt->time_stamp_hi;
-	timestamp_lo = pkt->time_stamp_lo;
-	hfi_flags = pkt->flags;
-	offset = pkt->offset;
-	filled_len = pkt->filled_len;
-	pic_type = pkt->picture_type;
-	output_tag = pkt->output_tag;
+	u32 flags = 0;
 
 	if ((hfi_flags & HFI_BUFFERFLAG_EOS) && !filled_len) {
 		reinit_completion(&inst->flush_completion);
@@ -550,16 +538,14 @@ static const struct iris_hfi_gen1_response_pkt_info pkt_infos[] = {
 
 static void iris_hfi_gen1_handle_response(struct iris_core *core, void *response)
 {
+	struct hfi_pkt_hdr *hdr = (struct hfi_pkt_hdr *)response;
 	const struct iris_hfi_gen1_response_pkt_info *pkt_info;
 	struct device *dev = core->dev;
 	struct hfi_session_pkt *pkt;
-	struct hfi_pkt_hdr *hdr;
 	struct completion *done;
 	struct iris_inst *inst;
 	bool found = false;
-	unsigned int i;
-
-	hdr = (struct hfi_pkt_hdr *)response;
+	u32 i;
 
 	for (i = 0; i < ARRAY_SIZE(pkt_infos); i++) {
 		pkt_info = &pkt_infos[i];

@@ -17,8 +17,7 @@ static u32 iris_calc_bw(struct iris_inst *inst, struct icc_vote_data *data)
 {
 	const struct bw_info *bw_tbl = NULL;
 	struct iris_core *core = inst->core;
-	unsigned int num_rows = 0;
-	unsigned int i, mbs, mbps;
+	u32 num_rows, i, mbs, mbps;
 	u32 icc_bw = 0;
 
 	mbs = DIV_ROUND_UP(data->height, 16) * DIV_ROUND_UP(data->width, 16);
@@ -28,9 +27,6 @@ static u32 iris_calc_bw(struct iris_inst *inst, struct icc_vote_data *data)
 
 	bw_tbl = core->iris_platform_data->bw_tbl_dec;
 	num_rows = core->iris_platform_data->bw_tbl_dec_size;
-
-	if (!bw_tbl || num_rows == 0)
-		goto exit;
 
 	for (i = 0; i < num_rows; i++) {
 		if (i != 0 && mbps > bw_tbl[i].mbs_per_sec)
@@ -67,12 +63,8 @@ static int iris_set_interconnects(struct iris_inst *inst)
 
 static int iris_vote_interconnects(struct iris_inst *inst)
 {
-	struct v4l2_format *inp_f;
-	struct icc_vote_data *vote_data;
-
-	vote_data = &inst->icc_data;
-
-	inp_f = inst->fmt_src;
+	struct icc_vote_data *vote_data = &inst->icc_data;
+	struct v4l2_format *inp_f = inst->fmt_src;
 
 	vote_data->width = inp_f->fmt.pix_mp.width;
 	vote_data->height = inp_f->fmt.pix_mp.height;
@@ -87,12 +79,10 @@ static int iris_set_clocks(struct iris_inst *inst)
 {
 	struct iris_core *core = inst->core;
 	struct iris_inst *instance;
-	int ret = 0;
-	u64 freq;
+	u64 freq = 0;
+	int ret;
 
 	mutex_lock(&core->lock);
-
-	freq = 0;
 	list_for_each_entry(instance, &core->instances, list) {
 		if (!instance->max_input_data_size)
 			continue;
@@ -101,9 +91,7 @@ static int iris_set_clocks(struct iris_inst *inst)
 	}
 
 	core->power.clk_freq = freq;
-
 	ret = dev_pm_opp_set_rate(core->dev, freq);
-
 	mutex_unlock(&core->lock);
 
 	return ret;
@@ -114,7 +102,7 @@ static int iris_scale_clocks(struct iris_inst *inst)
 	const struct vpu_ops *vpu_ops = inst->core->iris_platform_data->vpu_ops;
 	struct v4l2_m2m_ctx *m2m_ctx = inst->m2m_ctx;
 	struct v4l2_m2m_buffer *buffer, *n;
-	struct iris_buffer *buf = NULL;
+	struct iris_buffer *buf;
 	size_t data_size = 0;
 
 	v4l2_m2m_for_each_src_buf_safe(m2m_ctx, buffer, n) {
@@ -123,7 +111,6 @@ static int iris_scale_clocks(struct iris_inst *inst)
 	}
 
 	inst->max_input_data_size = data_size;
-
 	if (!inst->max_input_data_size)
 		return 0;
 

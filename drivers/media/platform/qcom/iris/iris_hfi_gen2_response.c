@@ -57,7 +57,7 @@ static u32 iris_hfi_gen2_buf_type_to_driver(enum hfi_buffer_type buf_type)
 
 static bool iris_hfi_gen2_is_valid_hfi_buffer_type(u32 buffer_type)
 {
-	switch (buffer_type)
+	switch (buffer_type) {
 	case HFI_BUFFER_BITSTREAM:
 	case HFI_BUFFER_RAW:
 	case HFI_BUFFER_BIN:
@@ -69,8 +69,9 @@ static bool iris_hfi_gen2_is_valid_hfi_buffer_type(u32 buffer_type)
 	case HFI_BUFFER_PERSIST:
 	case HFI_BUFFER_VPSS:
 		return true;
-
-	return true;
+	default:
+		return false;
+	}
 }
 
 static bool iris_hfi_gen2_is_valid_hfi_port(u32 port, u32 buffer_type)
@@ -141,12 +142,9 @@ static bool iris_hfi_gen2_validate_packet_payload(struct iris_hfi_packet *pkt)
 
 static int iris_hfi_gen2_validate_packet(u8 *response_pkt, u8 *core_resp_pkt)
 {
-	u32 response_pkt_size = 0;
-	u8 *response_limit;
+	u8 *response_limit = core_resp_pkt + IFACEQ_CORE_PKT_SIZE;
+	u32 response_pkt_size = *(u32 *)response_pkt;
 
-	response_limit = core_resp_pkt + IFACEQ_CORE_PKT_SIZE;
-
-	response_pkt_size = *(u32 *)response_pkt;
 	if (!response_pkt_size)
 		return -EINVAL;
 
@@ -162,8 +160,9 @@ static int iris_hfi_gen2_validate_packet(u8 *response_pkt, u8 *core_resp_pkt)
 static int iris_hfi_gen2_validate_hdr_packet(struct iris_core *core, struct iris_hfi_header *hdr)
 {
 	struct iris_hfi_packet *packet;
-	int i, ret = 0;
+	int ret;
 	u8 *pkt;
+	u32 i;
 
 	if (hdr->size < sizeof(*hdr) + sizeof(*packet))
 		return -EINVAL;
@@ -179,7 +178,7 @@ static int iris_hfi_gen2_validate_hdr_packet(struct iris_core *core, struct iris
 		pkt += packet->size;
 	}
 
-	return ret;
+	return 0;
 }
 
 static int iris_hfi_gen2_handle_session_info(struct iris_inst *inst,
@@ -251,8 +250,7 @@ static int iris_hfi_gen2_handle_session_error(struct iris_inst *inst,
 		break;
 	}
 
-	dev_err(core->dev, "session error received %#x: %s\n",
-		pkt->type, error);
+	dev_err(core->dev, "session error received %#x: %s\n", pkt->type, error);
 	iris_vb2_queue_error(inst);
 	iris_inst_change_state(inst, IRIS_INST_ERROR);
 
@@ -299,7 +297,7 @@ static int iris_hfi_gen2_handle_input_buffer(struct iris_inst *inst,
 {
 	struct v4l2_m2m_ctx *m2m_ctx = inst->m2m_ctx;
 	struct v4l2_m2m_buffer *m2m_buffer, *n;
-	struct iris_buffer *buf = NULL;
+	struct iris_buffer *buf;
 	bool found = false;
 
 	v4l2_m2m_for_each_src_buf_safe(m2m_ctx, m2m_buffer, n) {
@@ -328,9 +326,9 @@ static int iris_hfi_gen2_handle_output_buffer(struct iris_inst *inst,
 {
 	struct v4l2_m2m_ctx *m2m_ctx = inst->m2m_ctx;
 	struct v4l2_m2m_buffer *m2m_buffer, *n;
-	struct iris_buffer *buf = NULL;
-	int ret = 0;
+	struct iris_buffer *buf;
 	bool found = false;
+	int ret;
 
 	if (hfi_buffer->flags & HFI_BUF_FW_FLAG_LAST) {
 		ret = iris_inst_sub_state_change_drain_last(inst);
@@ -368,15 +366,14 @@ static int iris_hfi_gen2_handle_output_buffer(struct iris_inst *inst,
 
 	buf->flags = iris_hfi_gen2_get_driver_buffer_flags(inst, hfi_buffer->flags);
 
-	return ret;
+	return 0;
 }
 
-static int iris_hfi_gen2_handle_dequeue_buffers(struct iris_inst *inst)
+static void iris_hfi_gen2_handle_dequeue_buffers(struct iris_inst *inst)
 {
 	struct v4l2_m2m_ctx *m2m_ctx = inst->m2m_ctx;
 	struct v4l2_m2m_buffer *buffer, *n;
 	struct iris_buffer *buf = NULL;
-	int ret = 0;
 
 	v4l2_m2m_for_each_src_buf_safe(m2m_ctx, buffer, n) {
 		buf = to_iris_buffer(&buffer->vb);
@@ -384,9 +381,7 @@ static int iris_hfi_gen2_handle_dequeue_buffers(struct iris_inst *inst)
 			buf->attr &= ~BUF_ATTR_DEQUEUED;
 			if (!(buf->attr & BUF_ATTR_BUFFER_DONE)) {
 				buf->attr |= BUF_ATTR_BUFFER_DONE;
-				ret = iris_vb2_buffer_done(inst, buf);
-				if (ret)
-					ret = 0;
+				iris_vb2_buffer_done(inst, buf);
 			}
 		}
 	}
@@ -397,29 +392,21 @@ static int iris_hfi_gen2_handle_dequeue_buffers(struct iris_inst *inst)
 			buf->attr &= ~BUF_ATTR_DEQUEUED;
 			if (!(buf->attr & BUF_ATTR_BUFFER_DONE)) {
 				buf->attr |= BUF_ATTR_BUFFER_DONE;
-				ret = iris_vb2_buffer_done(inst, buf);
-				if (ret)
-					ret = 0;
+				iris_vb2_buffer_done(inst, buf);
 			}
 		}
 	}
-
-	return ret;
 }
 
 static int iris_hfi_gen2_handle_release_internal_buffer(struct iris_inst *inst,
 							struct iris_hfi_buffer *buffer)
 {
+	u32 buf_type = iris_hfi_gen2_buf_type_to_driver(buffer->type);
+	struct iris_buffers *buffers = &inst->buffers[buf_type];
 	struct iris_buffer *buf, *iter;
-	struct iris_buffers *buffers;
-	u32 buf_type;
+	bool found = false;
 	int ret = 0;
-	bool found;
 
-	buf_type = iris_hfi_gen2_buf_type_to_driver(buffer->type);
-	buffers = &inst->buffers[buf_type];
-
-	found = false;
 	list_for_each_entry(iter, &buffers->list, list) {
 		if (iter->device_addr == buffer->base_address) {
 			found = true;
@@ -431,7 +418,6 @@ static int iris_hfi_gen2_handle_release_internal_buffer(struct iris_inst *inst,
 		return -EINVAL;
 
 	buf->attr &= ~BUF_ATTR_QUEUED;
-
 	if (buf->attr & BUF_ATTR_PENDING_RELEASE)
 		ret = iris_destroy_internal_buffer(inst, buf);
 
@@ -500,18 +486,16 @@ static int iris_hfi_gen2_handle_session_drain(struct iris_inst *inst,
 static void iris_hfi_gen2_read_input_subcr_params(struct iris_inst *inst)
 {
 	struct iris_inst_hfi_gen2 *inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
-	struct v4l2_pix_format_mplane *pixmp_ip, *pixmp_op;
+	struct v4l2_pix_format_mplane *pixmp_ip = &inst->fmt_src->fmt.pix_mp;
+	struct v4l2_pix_format_mplane *pixmp_op = &inst->fmt_dst->fmt.pix_mp;
 	u32 primaries, matrix_coeff, transfer_char;
 	struct hfi_subscription_params subsc_params;
-	u32 colour_description_present_flag = 0;
-	u32 video_signal_type_present_flag = 0;
+	u32 colour_description_present_flag;
+	u32 video_signal_type_present_flag;
 	struct iris_core *core = inst->core;
-	u32 full_range = 0;
-	u32 width, height;
+	u32 full_range, width, height;
 
 	subsc_params = inst_hfi_gen2->src_subcr_params;
-	pixmp_ip = &inst->fmt_src->fmt.pix_mp;
-	pixmp_op = &inst->fmt_dst->fmt.pix_mp;
 	width = (subsc_params.bitstream_resolution &
 		HFI_BITMASK_BITSTREAM_WIDTH) >> 16;
 	height = subsc_params.bitstream_resolution &
@@ -631,7 +615,6 @@ static int iris_hfi_gen2_handle_session_property(struct iris_inst *inst,
 						 struct iris_hfi_packet *pkt)
 {
 	struct iris_inst_hfi_gen2 *inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
-	int ret = 0;
 
 	if (pkt->port != HFI_PORT_BITSTREAM)
 		return 0;
@@ -678,22 +661,19 @@ static int iris_hfi_gen2_handle_session_property(struct iris_inst *inst,
 		break;
 	}
 
-	return ret;
+	return 0;
 }
 
 static int iris_hfi_gen2_handle_image_version_property(struct iris_core *core,
 						       struct iris_hfi_packet *pkt)
 {
+	u8 *str_image_version = (u8 *)pkt + sizeof(*pkt);
+	u32 req_bytes = pkt->size - sizeof(*pkt);
 	char fw_version[IRIS_FW_VERSION_LENGTH];
-	u8 *str_image_version;
-	u32 req_bytes;
-	u32 i = 0;
+	u32 i;
 
-	req_bytes = pkt->size - sizeof(*pkt);
 	if (req_bytes < IRIS_FW_VERSION_LENGTH - 1)
 		return -EINVAL;
-
-	str_image_version = (u8 *)pkt + sizeof(*pkt);
 
 	for (i = 0; i < IRIS_FW_VERSION_LENGTH - 1; i++) {
 		if (str_image_version[i] != '\0')
@@ -702,7 +682,6 @@ static int iris_hfi_gen2_handle_image_version_property(struct iris_core *core,
 			fw_version[i] = ' ';
 	}
 	fw_version[i] = '\0';
-
 	dev_dbg(core->dev, "firmware version: %s\n", fw_version);
 
 	return 0;
@@ -711,33 +690,28 @@ static int iris_hfi_gen2_handle_image_version_property(struct iris_core *core,
 static int iris_hfi_gen2_handle_system_property(struct iris_core *core,
 						struct iris_hfi_packet *pkt)
 {
-	int ret = 0;
-
 	switch (pkt->type) {
 	case HFI_PROP_IMAGE_VERSION:
-		ret = iris_hfi_gen2_handle_image_version_property(core, pkt);
-		break;
+		return iris_hfi_gen2_handle_image_version_property(core, pkt);
 	default:
-		break;
+		return 0;
 	}
-
-	return ret;
 }
 
 static int iris_hfi_gen2_handle_system_response(struct iris_core *core,
 						struct iris_hfi_header *hdr)
 {
+	u8 *start_pkt = (u8 *)((u8 *)hdr + sizeof(*hdr));
 	struct iris_hfi_packet *packet;
-	u8 *pkt, *start_pkt;
-	int ret = 0;
-	int i, j;
+	u32 i, j;
+	u8 *pkt;
+	int ret;
 	static const struct iris_hfi_gen2_core_hfi_range range[] = {
 		{HFI_SYSTEM_ERROR_BEGIN, HFI_SYSTEM_ERROR_END, iris_hfi_gen2_handle_system_error },
 		{HFI_PROP_BEGIN,         HFI_PROP_END, iris_hfi_gen2_handle_system_property },
 		{HFI_CMD_BEGIN,          HFI_CMD_END, iris_hfi_gen2_handle_system_init },
 	};
 
-	start_pkt = (u8 *)((u8 *)hdr + sizeof(*hdr));
 	for (i = 0; i < ARRAY_SIZE(range); i++) {
 		pkt = start_pkt;
 		for (j = 0; j < hdr->num_packets; j++) {
@@ -760,36 +734,31 @@ static int iris_hfi_gen2_handle_system_response(struct iris_core *core,
 		}
 	}
 
-	return ret;
+	return 0;
 }
 
 static void iris_hfi_gen2_init_src_change_param(struct iris_inst *inst)
 {
 	struct iris_inst_hfi_gen2 *inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
-	u32 left_offset, top_offset, right_offset, bottom_offset;
-	struct v4l2_pix_format_mplane *pixmp_ip, *pixmp_op;
-	u32 primaries, matrix_coeff, transfer_char;
+	struct v4l2_pix_format_mplane *pixmp_ip = &inst->fmt_src->fmt.pix_mp;
+	struct v4l2_pix_format_mplane *pixmp_op = &inst->fmt_dst->fmt.pix_mp;
+	u32 bottom_offset = (pixmp_ip->height - inst->crop.height);
+	u32 right_offset = (pixmp_ip->width - inst->crop.width);
 	struct hfi_subscription_params *subsc_params;
+	u32 primaries, matrix_coeff, transfer_char;
 	u32 colour_description_present_flag = 0;
 	u32 video_signal_type_present_flag = 0;
-	u32 full_range = 0, video_format = 0;
+	u32 full_range, video_format = 0;
+	u32 left_offset = inst->crop.left;
+	u32 top_offset = inst->crop.top;
 
 	subsc_params = &inst_hfi_gen2->src_subcr_params;
-	pixmp_ip = &inst->fmt_src->fmt.pix_mp;
-	pixmp_op = &inst->fmt_dst->fmt.pix_mp;
-
 	subsc_params->bitstream_resolution =
 		pixmp_ip->width << 16 | pixmp_ip->height;
-
-	left_offset = inst->crop.left;
-	top_offset = inst->crop.top;
-	right_offset = (pixmp_ip->width - inst->crop.width);
-	bottom_offset = (pixmp_ip->height - inst->crop.height);
 	subsc_params->crop_offsets[0] =
 			left_offset << 16 | top_offset;
 	subsc_params->crop_offsets[1] =
 			right_offset << 16 | bottom_offset;
-
 	subsc_params->fw_min_count = inst->buffers[BUF_OUTPUT].min_count;
 
 	primaries = iris_hfi_gen2_get_color_primaries(pixmp_op->colorspace);
@@ -816,13 +785,13 @@ static void iris_hfi_gen2_init_src_change_param(struct iris_inst *inst)
 static int iris_hfi_gen2_handle_session_response(struct iris_core *core,
 						 struct iris_hfi_header *hdr)
 {
+	u8 *pkt = (u8 *)((u8 *)hdr + sizeof(*hdr));
 	struct iris_inst_hfi_gen2 *inst_hfi_gen2;
 	struct iris_hfi_packet *packet;
 	struct iris_inst *inst;
 	bool dequeue = false;
-	u8 *pkt, *start_pkt;
 	int ret = 0;
-	int i, j;
+	u32 i, j;
 	static const struct iris_hfi_gen2_inst_hfi_range range[] = {
 		{HFI_SESSION_ERROR_BEGIN, HFI_SESSION_ERROR_END,
 		 iris_hfi_gen2_handle_session_error},
@@ -842,7 +811,6 @@ static int iris_hfi_gen2_handle_session_response(struct iris_core *core,
 	inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
 	memset(&inst_hfi_gen2->hfi_frame_info, 0, sizeof(struct iris_hfi_frame_info));
 
-	pkt = (u8 *)((u8 *)hdr + sizeof(*hdr));
 	for (i = 0; i < hdr->num_packets; i++) {
 		packet = (struct iris_hfi_packet *)pkt;
 		if (packet->type == HFI_CMD_SETTINGS_CHANGE) {
@@ -854,9 +822,9 @@ static int iris_hfi_gen2_handle_session_response(struct iris_core *core,
 		pkt += packet->size;
 	}
 
-	start_pkt = (u8 *)((u8 *)hdr + sizeof(*hdr));
+	pkt = (u8 *)((u8 *)hdr + sizeof(*hdr));
 	for (i = 0; i < ARRAY_SIZE(range); i++) {
-		pkt = start_pkt;
+		pkt = (u8 *)((u8 *)hdr + sizeof(*hdr));
 		for (j = 0; j < hdr->num_packets; j++) {
 			packet = (struct iris_hfi_packet *)pkt;
 			if (packet->flags & HFI_FW_FLAGS_SESSION_ERROR)
@@ -872,13 +840,9 @@ static int iris_hfi_gen2_handle_session_response(struct iris_core *core,
 		}
 	}
 
-	if (dequeue) {
-		ret = iris_hfi_gen2_handle_dequeue_buffers(inst);
-		if (ret)
-			goto unlock;
-	}
+	if (dequeue)
+		iris_hfi_gen2_handle_dequeue_buffers(inst);
 
-unlock:
 	mutex_unlock(&inst->lock);
 
 	return ret;
@@ -886,10 +850,9 @@ unlock:
 
 static int iris_hfi_gen2_handle_response(struct iris_core *core, void *response)
 {
-	struct iris_hfi_header *hdr;
+	struct iris_hfi_header *hdr = (struct iris_hfi_header *)response;
 	int ret;
 
-	hdr = (struct iris_hfi_header *)response;
 	ret = iris_hfi_gen2_validate_hdr_packet(core, hdr);
 	if (ret)
 		return iris_hfi_gen2_handle_system_error(core, NULL);

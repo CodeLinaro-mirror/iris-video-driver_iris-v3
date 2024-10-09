@@ -109,11 +109,9 @@ static void iris_vpu_setup_ucregion_memory_map(struct iris_core *core)
 
 int iris_vpu_boot_firmware(struct iris_core *core)
 {
-	u32 ctrl_init = 0, ctrl_status = 0, count = 0, max_tries = 1000;
+	u32 ctrl_init = BIT(0), ctrl_status = 0, count = 0, max_tries = 1000;
 
 	iris_vpu_setup_ucregion_memory_map(core);
-
-	ctrl_init = BIT(0);
 
 	writel(ctrl_init, core->reg_base + CTRL_INIT);
 	writel(0x1, core->reg_base + CPU_CS_SCIACMDARG3);
@@ -147,7 +145,7 @@ void iris_vpu_raise_interrupt(struct iris_core *core)
 
 void iris_vpu_clear_interrupt(struct iris_core *core)
 {
-	u32 intr_status = 0, mask = 0;
+	u32 intr_status, mask;
 
 	intr_status = readl(core->reg_base + WRAPPER_INTR_STATUS);
 	mask = (WRAPPER_INTR_STATUS_A2H_BMSK |
@@ -163,7 +161,7 @@ void iris_vpu_clear_interrupt(struct iris_core *core)
 int iris_vpu_watchdog(struct iris_core *core, u32 intr_status)
 {
 	if (intr_status & WRAPPER_INTR_STATUS_A2HWD_BMSK) {
-		dev_err(core->dev, "received interrupt\n");
+		dev_err(core->dev, "received watchdog interrupt\n");
 		return -ETIME;
 	}
 
@@ -172,9 +170,8 @@ int iris_vpu_watchdog(struct iris_core *core, u32 intr_status)
 
 int iris_vpu_prepare_pc(struct iris_core *core)
 {
-	u32 wfi_status = 0, idle_status = 0, pc_ready = 0;
-	u32 ctrl_status = 0;
-	int val = 0;
+	u32 wfi_status, idle_status, pc_ready;
+	u32 ctrl_status, val = 0;
 	int ret;
 
 	ctrl_status = readl(core->reg_base + CTRL_STATUS);
@@ -189,10 +186,8 @@ int iris_vpu_prepare_pc(struct iris_core *core)
 		goto skip_power_off;
 
 	ret = core->hfi_ops->sys_pc_prep(core);
-	if (ret) {
-		dev_err(core->dev, "failed to prepare iris for power off\n");
+	if (ret)
 		goto skip_power_off;
-	}
 
 	ret = readl_poll_timeout(core->reg_base + CTRL_STATUS, val,
 				 val & CTRL_STATUS_PC_READY, 250, 2500);
@@ -218,7 +213,7 @@ skip_power_off:
 
 static int iris_vpu_power_off_controller(struct iris_core *core)
 {
-	int val = 0;
+	u32 val = 0;
 	int ret;
 
 	writel(MSK_SIGNAL_FROM_TENSILICA | MSK_CORE_POWER_ON, core->reg_base + CPU_CS_X2RPMH);
@@ -335,7 +330,7 @@ err_disable_power:
 
 int iris_vpu_power_on(struct iris_core *core)
 {
-	u32 freq = 0;
+	u32 freq;
 	int ret;
 
 	ret = iris_set_icc_bw(core, INT_MAX);

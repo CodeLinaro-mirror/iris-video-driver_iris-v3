@@ -54,9 +54,8 @@
 static u32 iris_output_buffer_size_nv12(struct iris_inst *inst)
 {
 	u32 y_plane, uv_plane, y_stride, uv_stride, y_scanlines, uv_scanlines;
-	struct v4l2_format *f;
+	struct v4l2_format *f = inst->fmt_dst;
 
-	f = inst->fmt_dst;
 	y_stride = ALIGN(f->fmt.pix_mp.width, 128);
 	uv_stride = ALIGN(f->fmt.pix_mp.width, 128);
 	y_scanlines = ALIGN(f->fmt.pix_mp.height, 32);
@@ -156,11 +155,10 @@ static u32 iris_output_buffer_size_nv12(struct iris_inst *inst)
 static u32 iris_output_buffer_size_qc08c(struct iris_inst *inst)
 {
 	u32 y_plane, uv_plane, y_stride, uv_stride;
+	struct v4l2_format *f = inst->fmt_dst;
 	u32 uv_meta_stride, uv_meta_plane;
 	u32 y_meta_stride, y_meta_plane;
-	struct v4l2_format *f;
 
-	f = inst->fmt_dst;
 	y_meta_stride = ALIGN(DIV_ROUND_UP(f->fmt.pix_mp.width, 32), 64);
 	y_meta_plane = y_meta_stride * ALIGN(DIV_ROUND_UP(f->fmt.pix_mp.height, 8), 16);
 	y_meta_plane = ALIGN(y_meta_plane, PIXELS_4K);
@@ -180,27 +178,21 @@ static u32 iris_output_buffer_size_qc08c(struct iris_inst *inst)
 
 static u32 iris_input_buffer_size(struct iris_inst *inst)
 {
-	struct platform_inst_caps *platform_caps;
+	struct platform_inst_caps *platform_caps = inst->core->iris_platform_data->inst_driver_caps;
 	u32 base_res_mbs = NUM_MBS_4K;
 	u32 frame_size, num_mbs;
-	u32 div_factor;
-
-	platform_caps = inst->core->iris_platform_data->inst_driver_caps;
+	u32 div_factor = 2;
 
 	num_mbs = iris_get_mbpf(inst);
 	if (num_mbs > NUM_MBS_4K) {
 		div_factor = 4;
 		base_res_mbs = platform_caps->max_mbpf;
-	} else {
-		base_res_mbs = NUM_MBS_4K;
-		div_factor = 2;
 	}
 
 	/*
 	 * frame_size = YUVsize / div_factor
 	 * where YUVsize = resolution_in_MBs * MBs_in_pixel * 3 / 2
 	 */
-
 	frame_size = base_res_mbs * (16 * 16) * 3 / 2 / div_factor;
 
 	return ALIGN(frame_size, PIXELS_4K);
@@ -224,26 +216,17 @@ int iris_get_buffer_size(struct iris_inst *inst,
 static void iris_fill_internal_buf_info(struct iris_inst *inst,
 					enum iris_buffer_type buffer_type)
 {
-	struct iris_core *core = inst->core;
-	struct iris_buffers *buffers;
-
-	buffers = &inst->buffers[buffer_type];
+	struct iris_buffers *buffers = &inst->buffers[buffer_type];
 
 	buffers->size = iris_vpu_buf_size(inst, buffer_type);
 	buffers->min_count = iris_vpu_buf_count(inst, buffer_type);
-
-	dev_dbg(core->dev, "buffer type %d count %d size %d",
-		buffer_type, buffers->min_count, buffers->size);
 }
 
 void iris_get_internal_buffers(struct iris_inst *inst, u32 plane)
 {
-	const struct iris_platform_data *platform_data;
+	const struct iris_platform_data *platform_data = inst->core->iris_platform_data;
 	const u32 *internal_buf_type;
-	u32 internal_buffer_count;
-	u32 i = 0;
-
-	platform_data = inst->core->iris_platform_data;
+	u32 internal_buffer_count, i;
 
 	if (V4L2_TYPE_IS_OUTPUT(plane)) {
 		internal_buf_type = platform_data->dec_ip_int_buf_tbl;
@@ -261,11 +244,9 @@ void iris_get_internal_buffers(struct iris_inst *inst, u32 plane)
 static int iris_create_internal_buffer(struct iris_inst *inst,
 				       enum iris_buffer_type buffer_type, u32 index)
 {
+	struct iris_buffers *buffers = &inst->buffers[buffer_type];
 	struct iris_core *core = inst->core;
-	struct iris_buffers *buffers;
 	struct iris_buffer *buffer;
-
-	buffers = &inst->buffers[buffer_type];
 
 	if (!buffers->size)
 		return 0;
@@ -291,14 +272,11 @@ static int iris_create_internal_buffer(struct iris_inst *inst,
 
 int iris_create_internal_buffers(struct iris_inst *inst, u32 plane)
 {
-	const struct iris_platform_data *platform_data;
+	const struct iris_platform_data *platform_data = inst->core->iris_platform_data;
+	u32 internal_buffer_count, i, j;
 	struct iris_buffers *buffers;
 	const u32 *internal_buf_type;
-	u32 internal_buffer_count;
-	u32 i = 0, j = 0;
-	int ret = 0;
-
-	platform_data = inst->core->iris_platform_data;
+	int ret;
 
 	if (V4L2_TYPE_IS_OUTPUT(plane)) {
 		internal_buf_type = platform_data->dec_ip_int_buf_tbl;
@@ -317,7 +295,7 @@ int iris_create_internal_buffers(struct iris_inst *inst, u32 plane)
 		}
 	}
 
-	return ret;
+	return 0;
 }
 
 int iris_queue_buffer(struct iris_inst *inst, struct iris_buffer *buf)
@@ -332,20 +310,17 @@ int iris_queue_buffer(struct iris_inst *inst, struct iris_buffer *buf)
 	buf->attr &= ~BUF_ATTR_DEFERRED;
 	buf->attr |= BUF_ATTR_QUEUED;
 
-	return ret;
+	return 0;
 }
 
 int iris_queue_internal_buffers(struct iris_inst *inst, u32 plane)
 {
-	const struct iris_platform_data *platform_data;
+	const struct iris_platform_data *platform_data = inst->core->iris_platform_data;
 	struct iris_buffer *buffer, *next;
 	struct iris_buffers *buffers;
 	const u32 *internal_buf_type;
-	u32 internal_buffer_count;
-	int ret = 0;
-	u32 i = 0;
-
-	platform_data = inst->core->iris_platform_data;
+	u32 internal_buffer_count, i;
+	int ret;
 
 	if (V4L2_TYPE_IS_OUTPUT(plane)) {
 		internal_buf_type = platform_data->dec_ip_int_buf_tbl;
@@ -368,7 +343,7 @@ int iris_queue_internal_buffers(struct iris_inst *inst, u32 plane)
 		}
 	}
 
-	return ret;
+	return 0;
 }
 
 int iris_destroy_internal_buffer(struct iris_inst *inst, struct iris_buffer *buffer)
@@ -385,14 +360,12 @@ int iris_destroy_internal_buffer(struct iris_inst *inst, struct iris_buffer *buf
 
 int iris_destroy_internal_buffers(struct iris_inst *inst, u32 plane)
 {
-	const struct iris_platform_data *platform_data;
-	const u32 *internal_buf_type = NULL;
+	const struct iris_platform_data *platform_data = inst->core->iris_platform_data;
 	struct iris_buffer *buf, *next;
 	struct iris_buffers *buffers;
-	int ret = 0;
-	u32 i, len = 0;
-
-	platform_data = inst->core->iris_platform_data;
+	const u32 *internal_buf_type;
+	u32 i, len;
+	int ret;
 
 	if (V4L2_TYPE_IS_OUTPUT(plane)) {
 		internal_buf_type = platform_data->dec_ip_int_buf_tbl;
@@ -411,18 +384,16 @@ int iris_destroy_internal_buffers(struct iris_inst *inst, u32 plane)
 		}
 	}
 
-	return ret;
+	return 0;
 }
 
 static int iris_release_internal_buffers(struct iris_inst *inst,
 					 enum iris_buffer_type buffer_type)
 {
 	const struct iris_hfi_command_ops *hfi_ops = inst->core->hfi_ops;
+	struct iris_buffers *buffers = &inst->buffers[buffer_type];
 	struct iris_buffer *buffer, *next;
-	struct iris_buffers *buffers;
-	int ret = 0;
-
-	buffers = &inst->buffers[buffer_type];
+	int ret;
 
 	list_for_each_entry_safe(buffer, next, &buffers->list, list) {
 		if (buffer->attr & BUF_ATTR_PENDING_RELEASE)
@@ -435,18 +406,15 @@ static int iris_release_internal_buffers(struct iris_inst *inst,
 		buffer->attr |= BUF_ATTR_PENDING_RELEASE;
 	}
 
-	return ret;
+	return 0;
 }
 
 static int iris_release_input_internal_buffers(struct iris_inst *inst)
 {
-	const struct iris_platform_data *platform_data;
+	const struct iris_platform_data *platform_data = inst->core->iris_platform_data;
 	const u32 *internal_buf_type;
-	u32 internal_buffer_count;
-	int ret = 0;
-	u32 i = 0;
-
-	platform_data = inst->core->iris_platform_data;
+	u32 internal_buffer_count, i;
+	int ret;
 
 	internal_buf_type = platform_data->dec_ip_int_buf_tbl;
 	internal_buffer_count = platform_data->dec_ip_int_buf_tbl_size;
@@ -457,17 +425,16 @@ static int iris_release_input_internal_buffers(struct iris_inst *inst)
 			return ret;
 	}
 
-	return ret;
+	return 0;
 }
 
 int iris_alloc_and_queue_persist_bufs(struct iris_inst *inst)
 {
+	struct iris_buffers *buffers = &inst->buffers[BUF_PERSIST];
 	struct iris_buffer *buffer, *next;
-	struct iris_buffers *buffers;
-	int ret = 0;
-	int i = 0;
+	int ret;
+	u32 i;
 
-	buffers = &inst->buffers[BUF_PERSIST];
 	if (!list_empty(&buffers->list))
 		return 0;
 
@@ -489,7 +456,7 @@ int iris_alloc_and_queue_persist_bufs(struct iris_inst *inst)
 			return ret;
 	}
 
-	return ret;
+	return 0;
 }
 
 int iris_alloc_and_queue_input_int_bufs(struct iris_inst *inst)
@@ -513,7 +480,7 @@ int iris_queue_deferred_buffers(struct iris_inst *inst, enum iris_buffer_type bu
 {
 	struct v4l2_m2m_ctx *m2m_ctx = inst->m2m_ctx;
 	struct v4l2_m2m_buffer *buffer, *n;
-	struct iris_buffer *buf = NULL;
+	struct iris_buffer *buf;
 	int ret;
 
 	iris_scale_power(inst);
@@ -567,7 +534,7 @@ static void iris_get_ts_metadata(struct iris_inst *inst, u64 timestamp_ns,
 				 struct vb2_v4l2_buffer *vbuf)
 {
 	u32 mask = V4L2_BUF_FLAG_TIMECODE | V4L2_BUF_FLAG_TSTAMP_SRC_MASK;
-	unsigned int i;
+	u32 i;
 
 	for (i = 0; i < ARRAY_SIZE(inst->tss); ++i) {
 		if (inst->tss[i].ts_ns != timestamp_ns)

@@ -25,22 +25,16 @@ bool iris_res_is_less_than(u32 width, u32 height,
 
 int iris_get_mbpf(struct iris_inst *inst)
 {
-	struct v4l2_format *inp_f;
-	int height, width;
-
-	inp_f = inst->fmt_src;
-	width = max(inp_f->fmt.pix_mp.width, inst->crop.width);
-	height = max(inp_f->fmt.pix_mp.height, inst->crop.height);
+	struct v4l2_format *inp_f = inst->fmt_src;
+	u32 height = max(inp_f->fmt.pix_mp.height, inst->crop.height);
+	u32 width = max(inp_f->fmt.pix_mp.width, inst->crop.width);
 
 	return NUM_MBS_PER_FRAME(height, width);
 }
 
 bool iris_split_mode_enabled(struct iris_inst *inst)
 {
-	if (inst->fmt_dst->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_NV12)
-		return true;
-
-	return false;
+	return inst->fmt_dst->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_NV12;
 }
 
 void iris_helper_buffers_done(struct iris_inst *inst, unsigned int type,

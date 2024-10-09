@@ -8,20 +8,16 @@
 
 static u64 iris_vpu2_calc_freq(struct iris_inst *inst, size_t data_size)
 {
-	struct platform_inst_caps *platform_caps;
-	unsigned long vpp_freq = 0, vsp_freq = 0;
-	u32 fps, mbpf, height = 0, width = 0;
-	struct v4l2_format *inp_f;
-	u32 mbs_per_second;
+	struct platform_inst_caps *platform_caps = inst->core->iris_platform_data->inst_driver_caps;
+	struct v4l2_format *inp_f = inst->fmt_src;
+	u32 mbs_per_second, mbpf, height, width;
+	unsigned long vpp_freq, vsp_freq;
+	u32 fps = DEFAULT_FPS;
 
-	platform_caps = inst->core->iris_platform_data->inst_driver_caps;
-
-	inp_f = inst->fmt_src;
 	width = max(inp_f->fmt.pix_mp.width, inst->crop.width);
 	height = max(inp_f->fmt.pix_mp.height, inst->crop.height);
 
 	mbpf = NUM_MBS_PER_FRAME(height, width);
-	fps = DEFAULT_FPS;
 	mbs_per_second = mbpf * fps;
 
 	vpp_freq = mbs_per_second * platform_caps->mb_cycles_vpp;

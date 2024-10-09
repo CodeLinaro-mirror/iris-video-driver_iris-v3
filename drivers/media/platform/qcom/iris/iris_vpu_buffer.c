@@ -25,27 +25,22 @@ static u32 size_h264d_hw_bin_buffer(u32 frame_width, u32 frame_height, u32 num_v
 
 static u32 hfi_buffer_bin_h264d(u32 frame_width, u32 frame_height, u32 num_vpp_pipes)
 {
-	u32 n_aligned_w, n_aligned_h;
+	u32 n_aligned_h = ALIGN(frame_height, 16);
+	u32 n_aligned_w = ALIGN(frame_width, 16);
 
-	n_aligned_w = ALIGN(frame_width, 16);
-	n_aligned_h = ALIGN(frame_height, 16);
-
-	return size_h264d_hw_bin_buffer(n_aligned_w, n_aligned_h,
-					num_vpp_pipes);
+	return size_h264d_hw_bin_buffer(n_aligned_w, n_aligned_h, num_vpp_pipes);
 }
 
 static u32 hfi_buffer_comv_h264d(u32 frame_width, u32 frame_height, u32 _comv_bufcount)
 {
-	u32 frame_width_in_mbs = DIV_ROUND_UP(frame_width, 16);
 	u32 frame_height_in_mbs = DIV_ROUND_UP(frame_height, 16);
-	u32 col_mv_aligned_width = (frame_width_in_mbs << 7);
+	u32 frame_width_in_mbs = DIV_ROUND_UP(frame_width, 16);
 	u32 col_zero_aligned_width = (frame_width_in_mbs << 2);
-	u32 col_zero_size = 0, size_colloc = 0;
+	u32 col_mv_aligned_width = (frame_width_in_mbs << 7);
+	u32 col_zero_size, size_colloc;
 
-	col_mv_aligned_width =
-		ALIGN(col_mv_aligned_width, 16);
-	col_zero_aligned_width =
-		ALIGN(col_zero_aligned_width, 16);
+	col_mv_aligned_width = ALIGN(col_mv_aligned_width, 16);
+	col_zero_aligned_width = ALIGN(col_zero_aligned_width, 16);
 	col_zero_size = col_zero_aligned_width *
 			((frame_height_in_mbs + 1) >> 1);
 	col_zero_size = ALIGN(col_zero_size, 64);
@@ -70,16 +65,12 @@ static u32 size_h264d_bse_cmd_buf(u32 frame_height)
 
 static u32 size_h264d_vpp_cmd_buf(u32 frame_height)
 {
-	u32 size, height;
+	u32 size, height = ALIGN(frame_height, 32);
 
-	height = ALIGN(frame_height, 32);
 	size = min_t(u32, (DIV_ROUND_UP(height, 16) * 48), H264D_MAX_SLICE) *
 			SIZE_H264D_VPP_CMD_PER_BUF;
 
-	if (size > VPP_CMD_MAX_SIZE)
-		size = VPP_CMD_MAX_SIZE;
-
-	return size;
+	return size > VPP_CMD_MAX_SIZE ? VPP_CMD_MAX_SIZE : size;
 }
 
 static u32 hfi_buffer_persist_h264d(void)
@@ -103,14 +94,12 @@ static u32 hfi_buffer_non_comv_h264d(u32 frame_width, u32 frame_height, u32 num_
 	return ALIGN(size, DMA_ALIGNMENT);
 }
 
-static u32 size_vpss_lb(u32 frame_width, u32 frame_height, u32 num_vpp_pipes)
+static u32 size_vpss_lb(u32 frame_width, u32 frame_height)
 {
-	u32 vpss_4tap_left_buffer_size = 0, vpss_div2_left_buffer_size = 0;
-	u32 vpss_4tap_top_buffer_size = 0, vpss_div2_top_buffer_size = 0;
 	u32 opb_lb_wr_llb_y_buffer_size, opb_lb_wr_llb_uv_buffer_size;
 	u32 opb_wr_top_line_chroma_buffer_size;
 	u32 opb_wr_top_line_luma_buffer_size;
-	u32 macrotiling_size = 32, size;
+	u32 macrotiling_size = 32;
 
 	opb_wr_top_line_luma_buffer_size =
 		ALIGN(frame_width, macrotiling_size) / macrotiling_size * 256;
@@ -124,15 +113,10 @@ static u32 size_vpss_lb(u32 frame_width, u32 frame_height, u32 num_vpp_pipes)
 		ALIGN((ALIGN(frame_height, 8) / (4 / 2)) * 64, 32);
 	opb_lb_wr_llb_y_buffer_size =
 		ALIGN((ALIGN(frame_height, 8) / (4 / 2)) * 64, 32);
-	size = num_vpp_pipes * 2 *
-		(vpss_4tap_top_buffer_size + vpss_div2_top_buffer_size) +
-		2 * (vpss_4tap_left_buffer_size + vpss_div2_left_buffer_size) +
-		opb_wr_top_line_luma_buffer_size +
+	return opb_wr_top_line_luma_buffer_size +
 		opb_wr_top_line_chroma_buffer_size +
 		opb_lb_wr_llb_uv_buffer_size +
 		opb_lb_wr_llb_y_buffer_size;
-
-	return size;
 }
 
 static u32 hfi_buffer_line_h264d(u32 frame_width, u32 frame_height,
@@ -152,38 +136,27 @@ static u32 hfi_buffer_line_h264d(u32 frame_width, u32 frame_height,
 		ALIGN(size_h264d_qp(frame_width, frame_height), DMA_ALIGNMENT);
 	size = ALIGN(size, DMA_ALIGNMENT);
 	if (is_opb)
-		vpss_lb_size = size_vpss_lb(frame_width, frame_height, num_vpp_pipes);
+		vpss_lb_size = size_vpss_lb(frame_width, frame_height);
 
-	size = ALIGN((size + vpss_lb_size), DMA_ALIGNMENT);
-
-	return size;
+	return ALIGN((size + vpss_lb_size), DMA_ALIGNMENT);
 }
 
 static u32 iris_vpu_dec_bin_size(struct iris_inst *inst)
 {
-	struct iris_core *core = inst->core;
-	u32 width, height, num_vpp_pipes;
-	struct v4l2_format *f;
-
-	num_vpp_pipes = core->iris_platform_data->num_vpp_pipe;
-
-	f = inst->fmt_src;
-	width = f->fmt.pix_mp.width;
-	height = f->fmt.pix_mp.height;
+	u32 num_vpp_pipes = inst->core->iris_platform_data->num_vpp_pipe;
+	struct v4l2_format *f = inst->fmt_src;
+	u32 height = f->fmt.pix_mp.height;
+	u32 width = f->fmt.pix_mp.width;
 
 	return hfi_buffer_bin_h264d(width, height, num_vpp_pipes);
 }
 
 static u32 iris_vpu_dec_comv_size(struct iris_inst *inst)
 {
-	u32 width, height, num_comv;
-	struct v4l2_format *f;
-
-	f = inst->fmt_src;
-	width = f->fmt.pix_mp.width;
-	height = f->fmt.pix_mp.height;
-
-	num_comv = inst->buffers[BUF_OUTPUT].min_count;
+	u32 num_comv = inst->buffers[BUF_OUTPUT].min_count;
+	struct v4l2_format *f = inst->fmt_src;
+	u32 height = f->fmt.pix_mp.height;
+	u32 width = f->fmt.pix_mp.width;
 
 	return hfi_buffer_comv_h264d(width, height, num_comv);
 }
@@ -203,37 +176,26 @@ static u32 iris_vpu_dec_dpb_size(struct iris_inst *inst)
 
 static u32 iris_vpu_dec_non_comv_size(struct iris_inst *inst)
 {
-	struct iris_core *core = inst->core;
-	u32 width, height, num_vpp_pipes;
-	struct v4l2_format *f;
-
-	num_vpp_pipes = core->iris_platform_data->num_vpp_pipe;
-
-	f = inst->fmt_src;
-	width = f->fmt.pix_mp.width;
-	height = f->fmt.pix_mp.height;
+	u32 num_vpp_pipes = inst->core->iris_platform_data->num_vpp_pipe;
+	struct v4l2_format *f = inst->fmt_src;
+	u32 height = f->fmt.pix_mp.height;
+	u32 width = f->fmt.pix_mp.width;
 
 	return hfi_buffer_non_comv_h264d(width, height, num_vpp_pipes);
 }
 
 static u32 iris_vpu_dec_line_size(struct iris_inst *inst)
 {
-	struct iris_core *core = inst->core;
-	u32 width, height, num_vpp_pipes;
-	struct v4l2_format *f;
+	u32 num_vpp_pipes = inst->core->iris_platform_data->num_vpp_pipe;
+	struct v4l2_format *f = inst->fmt_src;
+	u32 height = f->fmt.pix_mp.height;
+	u32 width = f->fmt.pix_mp.width;
 	bool is_opb = false;
-
-	num_vpp_pipes = core->iris_platform_data->num_vpp_pipe;
 
 	if (iris_split_mode_enabled(inst))
 		is_opb = true;
 
-	f = inst->fmt_src;
-	width = f->fmt.pix_mp.width;
-	height = f->fmt.pix_mp.height;
-
-	return hfi_buffer_line_h264d(width, height, is_opb,
-				     num_vpp_pipes);
+	return hfi_buffer_line_h264d(width, height, is_opb, num_vpp_pipes);
 }
 
 static u32 iris_vpu_dec_scratch1_size(struct iris_inst *inst)
@@ -250,9 +212,8 @@ struct iris_vpu_buf_type_handle {
 
 int iris_vpu_buf_size(struct iris_inst *inst, enum iris_buffer_type buffer_type)
 {
-	const struct iris_vpu_buf_type_handle *buf_type_handle_arr = NULL;
-	u32 size = 0, buf_type_handle_size = 0;
-	int i;
+	const struct iris_vpu_buf_type_handle *buf_type_handle_arr;
+	u32 size = 0, buf_type_handle_size, i;
 
 	static const struct iris_vpu_buf_type_handle dec_internal_buf_type_handle[] = {
 		{BUF_BIN,         iris_vpu_dec_bin_size             },
@@ -279,14 +240,12 @@ int iris_vpu_buf_size(struct iris_inst *inst, enum iris_buffer_type buffer_type)
 
 static inline int iris_vpu_dpb_count(struct iris_inst *inst)
 {
-	int count = 0;
-
 	if (iris_split_mode_enabled(inst)) {
-		count = inst->fw_min_count ?
+		return inst->fw_min_count ?
 			inst->fw_min_count : inst->buffers[BUF_OUTPUT].min_count;
 	}
 
-	return count;
+	return 0;
 }
 
 int iris_vpu_buf_count(struct iris_inst *inst, enum iris_buffer_type buffer_type)

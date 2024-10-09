@@ -92,7 +92,6 @@ enum iris_inst_state {
 	IRIS_INST_ERROR,
 };
 
-#define IRIS_INST_SUB_NONE		0
 #define IRIS_INST_SUB_STATES		8
 #define IRIS_INST_MAX_SUB_STATE_VALUE	((1 << IRIS_INST_SUB_STATES) - 1)
 
@@ -115,6 +114,8 @@ enum iris_inst_state {
  * IRIS_INST_SUB_OUTPUT_PAUSE: last buffer is received form firmware as part
  *                             of drc sequence. This indicates that
  *                             firmware is paused to process any further output frames.
+ * IRIS_INST_SUB_LOAD_RESOURCES: indicates all the resources have been loaded by the
+ *                               firmware and it is ready for processing.
  */
 enum iris_inst_sub_state {
 	IRIS_INST_SUB_FIRST_IPSC	= BIT(0),

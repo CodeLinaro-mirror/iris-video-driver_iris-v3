@@ -13,98 +13,66 @@
 
 u32 iris_hfi_get_v4l2_color_primaries(u32 hfi_primaries)
 {
-	u32 primaries = V4L2_COLORSPACE_DEFAULT;
-
 	switch (hfi_primaries) {
 	case HFI_PRIMARIES_RESERVED:
-		primaries = V4L2_COLORSPACE_DEFAULT;
-		break;
+		return V4L2_COLORSPACE_DEFAULT;
 	case HFI_PRIMARIES_BT709:
-		primaries = V4L2_COLORSPACE_REC709;
-		break;
+		return V4L2_COLORSPACE_REC709;
 	case HFI_PRIMARIES_BT470_SYSTEM_M:
-		primaries = V4L2_COLORSPACE_470_SYSTEM_M;
-		break;
+		return V4L2_COLORSPACE_470_SYSTEM_M;
 	case HFI_PRIMARIES_BT470_SYSTEM_BG:
-		primaries = V4L2_COLORSPACE_470_SYSTEM_BG;
-		break;
+		return V4L2_COLORSPACE_470_SYSTEM_BG;
 	case HFI_PRIMARIES_BT601_525:
-		primaries = V4L2_COLORSPACE_SMPTE170M;
-		break;
+		return V4L2_COLORSPACE_SMPTE170M;
 	case HFI_PRIMARIES_SMPTE_ST240M:
-		primaries = V4L2_COLORSPACE_SMPTE240M;
-		break;
+		return V4L2_COLORSPACE_SMPTE240M;
 	case HFI_PRIMARIES_BT2020:
-		primaries = V4L2_COLORSPACE_BT2020;
-		break;
+		return V4L2_COLORSPACE_BT2020;
 	case V4L2_COLORSPACE_DCI_P3:
-		primaries = HFI_PRIMARIES_SMPTE_RP431_2;
-		break;
+		return HFI_PRIMARIES_SMPTE_RP431_2;
 	default:
-		break;
+		return V4L2_COLORSPACE_DEFAULT;
 	}
-
-	return primaries;
 }
 
 u32 iris_hfi_get_v4l2_transfer_char(u32 hfi_characterstics)
 {
-	u32 characterstics = V4L2_XFER_FUNC_DEFAULT;
-
 	switch (hfi_characterstics) {
 	case HFI_TRANSFER_RESERVED:
-		characterstics = V4L2_XFER_FUNC_DEFAULT;
-		break;
+		return V4L2_XFER_FUNC_DEFAULT;
 	case HFI_TRANSFER_BT709:
-		characterstics = V4L2_XFER_FUNC_709;
-		break;
+		return V4L2_XFER_FUNC_709;
 	case HFI_TRANSFER_SMPTE_ST240M:
-		characterstics = V4L2_XFER_FUNC_SMPTE240M;
-		break;
+		return V4L2_XFER_FUNC_SMPTE240M;
 	case HFI_TRANSFER_SRGB_SYCC:
-		characterstics = V4L2_XFER_FUNC_SRGB;
-		break;
+		return V4L2_XFER_FUNC_SRGB;
 	case HFI_TRANSFER_SMPTE_ST2084_PQ:
-		characterstics = V4L2_XFER_FUNC_SMPTE2084;
-		break;
+		return V4L2_XFER_FUNC_SMPTE2084;
 	default:
-		break;
+		return V4L2_XFER_FUNC_DEFAULT;
 	}
-
-	return characterstics;
 }
 
 u32 iris_hfi_get_v4l2_matrix_coefficients(u32 hfi_coefficients)
 {
-	u32 coefficients = V4L2_YCBCR_ENC_DEFAULT;
-
 	switch (hfi_coefficients) {
 	case HFI_MATRIX_COEFF_RESERVED:
-		coefficients = V4L2_YCBCR_ENC_DEFAULT;
-		break;
+		return V4L2_YCBCR_ENC_DEFAULT;
 	case HFI_MATRIX_COEFF_BT709:
-		coefficients = V4L2_YCBCR_ENC_709;
-		break;
+		return V4L2_YCBCR_ENC_709;
 	case HFI_MATRIX_COEFF_BT470_SYS_BG_OR_BT601_625:
-		coefficients = V4L2_YCBCR_ENC_XV601;
-		break;
+		return V4L2_YCBCR_ENC_XV601;
 	case HFI_MATRIX_COEFF_BT601_525_BT1358_525_OR_625:
-		coefficients = V4L2_YCBCR_ENC_601;
-		break;
+		return V4L2_YCBCR_ENC_601;
 	case HFI_MATRIX_COEFF_SMPTE_ST240:
-		coefficients = V4L2_YCBCR_ENC_SMPTE240M;
-		break;
+		return V4L2_YCBCR_ENC_SMPTE240M;
 	case HFI_MATRIX_COEFF_BT2020_NON_CONSTANT:
-		coefficients = V4L2_YCBCR_ENC_BT2020;
-		break;
+		return V4L2_YCBCR_ENC_BT2020;
 	case HFI_MATRIX_COEFF_BT2020_CONSTANT:
-		coefficients = V4L2_YCBCR_ENC_BT2020_CONST_LUM;
-		break;
+		return V4L2_YCBCR_ENC_BT2020_CONST_LUM;
 	default:
-		break;
+		return V4L2_YCBCR_ENC_DEFAULT;
 	}
-
-	return coefficients;
 }
 
 int iris_hfi_core_init(struct iris_core *core)
@@ -137,6 +105,7 @@ irqreturn_t iris_hfi_isr_handler(int irq, void *data)
 	if (!core)
 		return IRQ_NONE;
 
+	// TODO: VN: Add core state check here
 	mutex_lock(&core->lock);
 	pm_runtime_mark_last_busy(core->dev);
 	iris_vpu_clear_interrupt(core);
@@ -156,26 +125,29 @@ int iris_hfi_pm_suspend(struct iris_core *core)
 
 	ret = iris_vpu_prepare_pc(core);
 	if (ret) {
-		dev_err(core->dev, "prepare pc ret %d\n", ret);
 		pm_runtime_mark_last_busy(core->dev);
-		return -EAGAIN;
+		ret = -EAGAIN;
+		goto error;
 	}
 
 	ret = iris_set_hw_state(core, false);
 	if (ret)
-		return ret;
+		goto error;
 
 	iris_vpu_power_off(core);
 
 	return 0;
+
+error:
+	dev_err(core->dev, "failed to suspend\n");
+
+	return ret;
 }
 
 int iris_hfi_pm_resume(struct iris_core *core)
 {
-	const struct iris_hfi_command_ops *ops;
+	const struct iris_hfi_command_ops *ops = core->hfi_ops;
 	int ret;
-
-	ops = core->hfi_ops;
 
 	ret = iris_vpu_power_on(core);
 	if (ret)
