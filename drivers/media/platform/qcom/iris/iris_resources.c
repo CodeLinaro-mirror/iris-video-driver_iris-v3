@@ -8,7 +8,6 @@
 #include <linux/pm_domain.h>
 #include <linux/pm_opp.h>
 #include <linux/pm_runtime.h>
-#include <linux/reset.h>
 
 #include "iris_core.h"
 #include "iris_resources.h"
@@ -41,16 +40,12 @@ int iris_set_icc_bw(struct iris_core *core, unsigned long icc_bw)
 		}
 	}
 
-	ret = icc_bulk_set_bw(core->icc_count, core->icc_tbl);
-	if (ret)
-		dev_err(core->dev, "failed to unset icc bw\n");
-
-	return ret;
+	return icc_bulk_set_bw(core->icc_count, core->icc_tbl);
 }
 
 int iris_unset_icc_bw(struct iris_core *core)
 {
-	int ret, i;
+	int i;
 
 	core->power.icc_bw = 0;
 
@@ -59,31 +54,14 @@ int iris_unset_icc_bw(struct iris_core *core)
 		core->icc_tbl[i].peak_bw = 0;
 	}
 
-	ret = icc_bulk_set_bw(core->icc_count, core->icc_tbl);
-	if (ret)
-		dev_err(core->dev, "failed to unset icc bw\n");
-
-	return ret;
-}
-
-int iris_opp_set_rate(struct iris_core *core, u64 freq)
-{
-	int ret;
-
-	ret = dev_pm_opp_set_rate(core->dev, freq);
-	if (ret) {
-		dev_err(core->dev, "failed to set rate\n");
-		return ret;
-	}
-
-	return ret;
+	return icc_bulk_set_bw(core->icc_count, core->icc_tbl);
 }
 
 int iris_enable_power_domains(struct iris_core *core, struct device *pd_dev)
 {
 	int ret;
 
-	ret = iris_opp_set_rate(core, ULONG_MAX);
+	ret = dev_pm_opp_set_rate(core->dev, ULONG_MAX);
 	if (ret)
 		return ret;
 
@@ -98,15 +76,13 @@ int iris_disable_power_domains(struct iris_core *core, struct device *pd_dev)
 {
 	int ret;
 
-	ret = iris_opp_set_rate(core, 0);
+	ret = dev_pm_opp_set_rate(core->dev, 0);
 	if (ret)
 		return ret;
 
-	ret = pm_runtime_put_sync(pd_dev);
-	if (ret)
-		return ret;
+	pm_runtime_put_sync(pd_dev);
 
-	return ret;
+	return 0;
 }
 
 static struct clk *iris_get_clk_by_type(struct iris_core *core, enum platform_clk_type clk_type)
@@ -133,21 +109,12 @@ static struct clk *iris_get_clk_by_type(struct iris_core *core, enum platform_cl
 int iris_prepare_enable_clock(struct iris_core *core, enum platform_clk_type clk_type)
 {
 	struct clk *clock;
-	int ret = 0;
 
 	clock = iris_get_clk_by_type(core, clk_type);
-	if (!clock) {
-		dev_err(core->dev, "failed to get clk: %d\n", clk_type);
+	if (!clock)
 		return -EINVAL;
-	}
 
-	ret = clk_prepare_enable(clock);
-	if (ret) {
-		dev_err(core->dev, "failed to enable clock %d\n", clk_type);
-		return ret;
-	}
-
-	return ret;
+	return clk_prepare_enable(clock);
 }
 
 int iris_disable_unprepare_clock(struct iris_core *core, enum platform_clk_type clk_type)
@@ -155,26 +122,10 @@ int iris_disable_unprepare_clock(struct iris_core *core, enum platform_clk_type 
 	struct clk *clock;
 
 	clock = iris_get_clk_by_type(core, clk_type);
-	if (!clock) {
-		dev_err(core->dev, "failed to get clk: %d\n", clk_type);
+	if (!clock)
 		return -EINVAL;
-	}
 
 	clk_disable_unprepare(clock);
 
 	return 0;
-}
-
-int iris_reset_ahb2axi_bridge(struct iris_core *core)
-{
-	u32 rst_tbl_size;
-	int ret;
-
-	rst_tbl_size = core->iris_platform_data->clk_rst_tbl_size;
-
-	ret = reset_control_bulk_reset(rst_tbl_size, core->resets);
-	if (ret)
-		dev_err(core->dev, "failed to toggle resets: %d\n", ret);
-
-	return ret;
 }

@@ -17,7 +17,7 @@
 static int iris_init_icc(struct iris_core *core)
 {
 	const struct icc_info *icc_tbl;
-	u32 ret, i = 0;
+	u32 i = 0;
 
 	icc_tbl = core->iris_platform_data->icc_tbl;
 
@@ -34,45 +34,7 @@ static int iris_init_icc(struct iris_core *core)
 		core->icc_tbl[i].peak_bw = 0;
 	}
 
-	ret = devm_of_icc_bulk_get(core->dev, core->icc_count, core->icc_tbl);
-	if (ret)
-		return dev_err_probe(core->dev, ret, "failed to get interconnect paths\n");
-
-	return 0;
-}
-
-static int iris_pd_get(struct iris_core *core)
-{
-	int ret;
-
-	struct dev_pm_domain_attach_data iris_pd_data = {
-		.pd_names = core->iris_platform_data->pmdomain_tbl,
-		.num_pd_names = core->iris_platform_data->pmdomain_tbl_size,
-		.pd_flags = PD_FLAG_NO_DEV_LINK,
-	};
-
-	ret = devm_pm_domain_attach_list(core->dev, &iris_pd_data, &core->pmdomain_tbl);
-	if (ret < 0)
-		return ret;
-
-	return 0;
-}
-
-static int iris_opp_pd_get(struct iris_core *core)
-{
-	int ret;
-
-	struct dev_pm_domain_attach_data iris_opp_pd_data = {
-		.pd_names = core->iris_platform_data->opp_pd_tbl,
-		.num_pd_names = core->iris_platform_data->opp_pd_tbl_size,
-		.pd_flags = PD_FLAG_DEV_LINK_ON,
-	};
-
-	ret = devm_pm_domain_attach_list(core->dev, &iris_opp_pd_data, &core->opp_pmdomain_tbl);
-	if (ret < 0)
-		return ret;
-
-	return 0;
+	return devm_of_icc_bulk_get(core->dev, core->icc_count, core->icc_tbl);
 }
 
 static int iris_init_power_domains(struct iris_core *core)
@@ -81,12 +43,24 @@ static int iris_init_power_domains(struct iris_core *core)
 	u32 clk_cnt, i;
 	int ret;
 
-	ret = iris_pd_get(core);
-	if (ret)
+	struct dev_pm_domain_attach_data iris_pd_data = {
+		.pd_names = core->iris_platform_data->pmdomain_tbl,
+		.num_pd_names = core->iris_platform_data->pmdomain_tbl_size,
+		.pd_flags = PD_FLAG_NO_DEV_LINK,
+	};
+
+	struct dev_pm_domain_attach_data iris_opp_pd_data = {
+		.pd_names = core->iris_platform_data->opp_pd_tbl,
+		.num_pd_names = core->iris_platform_data->opp_pd_tbl_size,
+		.pd_flags = PD_FLAG_DEV_LINK_ON,
+	};
+
+	ret = devm_pm_domain_attach_list(core->dev, &iris_pd_data, &core->pmdomain_tbl);
+	if (ret < 0)
 		return ret;
 
-	ret = iris_opp_pd_get(core);
-	if (ret)
+	ret =  devm_pm_domain_attach_list(core->dev, &iris_opp_pd_data, &core->opp_pmdomain_tbl);
+	if (ret < 0)
 		return ret;
 
 	clk_tbl = core->iris_platform_data->clk_tbl;
@@ -100,11 +74,7 @@ static int iris_init_power_domains(struct iris_core *core)
 		}
 	}
 
-	ret = devm_pm_opp_of_add_table(core->dev);
-	if (ret)
-		return dev_err_probe(core->dev, ret, "failed to add opp table\n");
-
-	return 0;
+	return devm_pm_opp_of_add_table(core->dev);
 }
 
 static int iris_init_clocks(struct iris_core *core)
@@ -113,7 +83,7 @@ static int iris_init_clocks(struct iris_core *core)
 
 	ret = devm_clk_bulk_get_all(core->dev, &core->clock_tbl);
 	if (ret < 0)
-		return dev_err_probe(core->dev, ret, "failed to get bulk clock\n");
+		return ret;
 
 	core->clk_count = ret;
 
@@ -124,7 +94,7 @@ static int iris_init_resets(struct iris_core *core)
 {
 	const char * const *rst_tbl;
 	u32 rst_tbl_size;
-	u32 i = 0, ret;
+	u32 i = 0;
 
 	rst_tbl = core->iris_platform_data->clk_rst_tbl;
 	rst_tbl_size = core->iris_platform_data->clk_rst_tbl_size;
@@ -132,17 +102,13 @@ static int iris_init_resets(struct iris_core *core)
 	core->resets = devm_kzalloc(core->dev,
 				    sizeof(*core->resets) * rst_tbl_size,
 				    GFP_KERNEL);
-	if (rst_tbl_size && !core->resets)
+	if (!core->resets)
 		return -ENOMEM;
 
 	for (i = 0; i < rst_tbl_size; i++)
 		core->resets[i].id = rst_tbl[i];
 
-	ret = devm_reset_control_bulk_get_exclusive(core->dev, rst_tbl_size, core->resets);
-	if (ret)
-		return dev_err_probe(core->dev, ret, "failed to get resets\n");
-
-	return 0;
+	return devm_reset_control_bulk_get_exclusive(core->dev, rst_tbl_size, core->resets);
 }
 
 static int iris_init_resources(struct iris_core *core)
@@ -161,23 +127,7 @@ static int iris_init_resources(struct iris_core *core)
 	if (ret)
 		return ret;
 
-	ret = iris_init_resets(core);
-
-	return ret;
-}
-
-static inline int iris_init_isr(struct iris_core *core)
-{
-	int ret;
-
-	ret = devm_request_threaded_irq(core->dev, core->irq, iris_hfi_isr,
-					iris_hfi_isr_handler, IRQF_TRIGGER_HIGH, "iris", core);
-	if (ret)
-		return dev_err_probe(core->dev, ret, "failed to allocate irq\n");
-
-	disable_irq_nosync(core->irq);
-
-	return ret;
+	return iris_init_resets(core);
 }
 
 static int iris_register_video_device(struct iris_core *core)
@@ -272,9 +222,12 @@ static int iris_probe(struct platform_device *pdev)
 
 	core->iris_platform_data = of_device_get_match_data(core->dev);
 
-	ret = iris_init_isr(core);
+	ret = devm_request_threaded_irq(core->dev, core->irq, iris_hfi_isr,
+					iris_hfi_isr_handler, IRQF_TRIGGER_HIGH, "iris", core);
 	if (ret)
-		return dev_err_probe(core->dev, ret, "failed to init isr\n");
+		return ret;
+
+	disable_irq_nosync(core->irq);
 
 	iris_init_ops(core);
 	core->iris_platform_data->init_hfi_command_ops(core);
@@ -282,7 +235,7 @@ static int iris_probe(struct platform_device *pdev)
 
 	ret = iris_init_resources(core);
 	if (ret)
-		return dev_err_probe(core->dev, ret, "failed to init resources\n");
+		return ret;
 
 	iris_session_init_caps(core);
 
@@ -390,5 +343,5 @@ static struct platform_driver qcom_iris_driver = {
 };
 
 module_platform_driver(qcom_iris_driver);
-MODULE_DESCRIPTION("Qualcomm Iris video driver");
+MODULE_DESCRIPTION("Qualcomm iris video driver");
 MODULE_LICENSE("GPL");

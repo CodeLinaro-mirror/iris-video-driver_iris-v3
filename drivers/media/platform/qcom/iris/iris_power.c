@@ -3,6 +3,7 @@
  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <linux/pm_opp.h>
 #include <linux/pm_runtime.h>
 #include <media/v4l2-mem2mem.h>
 
@@ -101,7 +102,7 @@ static int iris_set_clocks(struct iris_inst *inst)
 
 	core->power.clk_freq = freq;
 
-	ret = iris_opp_set_rate(core, freq);
+	ret = dev_pm_opp_set_rate(core->dev, freq);
 
 	mutex_unlock(&core->lock);
 

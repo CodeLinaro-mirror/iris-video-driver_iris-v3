@@ -3,6 +3,8 @@
  * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <media/v4l2-mem2mem.h>
+
 #include "iris_instance.h"
 
 static bool iris_allow_inst_state_change(struct iris_inst *inst,
@@ -263,15 +265,15 @@ static inline bool iris_drain_pending(struct iris_inst *inst)
 
 bool iris_allow_cmd(struct iris_inst *inst, u32 cmd)
 {
+	struct vb2_queue *src_q = v4l2_m2m_get_src_vq(inst->m2m_ctx);
+	struct vb2_queue *dst_q = v4l2_m2m_get_dst_vq(inst->m2m_ctx);
+
 	if (cmd == V4L2_DEC_CMD_START) {
-		if (inst->state == IRIS_INST_INPUT_STREAMING ||
-		    inst->state == IRIS_INST_OUTPUT_STREAMING ||
-		    inst->state == IRIS_INST_STREAMING)
+		if (vb2_is_streaming(src_q) || vb2_is_streaming(dst_q))
 			if (iris_drc_pending(inst) || iris_drain_pending(inst))
 				return true;
 	} else if (cmd == V4L2_DEC_CMD_STOP) {
-		if (inst->state == IRIS_INST_INPUT_STREAMING ||
-		    inst->state == IRIS_INST_STREAMING)
+		if (vb2_is_streaming(src_q))
 			if (inst->sub_state != IRIS_INST_SUB_DRAIN)
 				return true;
 	}

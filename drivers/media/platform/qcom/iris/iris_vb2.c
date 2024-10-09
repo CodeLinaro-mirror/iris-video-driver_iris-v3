@@ -105,9 +105,8 @@ exit:
 int iris_vb2_buf_init(struct vb2_buffer *vb2)
 {
 	struct vb2_v4l2_buffer *vbuf = to_vb2_v4l2_buffer(vb2);
-	struct iris_buffer *buf = NULL;
+	struct iris_buffer *buf = to_iris_buffer(vbuf);
 
-	buf = to_iris_buffer(vbuf);
 	buf->device_addr = vb2_dma_contig_plane_dma_addr(vb2, 0);
 
 	return 0;
@@ -135,6 +134,7 @@ int iris_vb2_queue_setup(struct vb2_queue *q,
 	core = inst->core;
 	f = V4L2_TYPE_IS_OUTPUT(q->type) ? inst->fmt_src : inst->fmt_dst;
 
+	// TODO : VN: check and remove
 	if (inst->state == IRIS_INST_STREAMING) {
 		ret = -EINVAL;
 		goto unlock;
@@ -192,6 +192,7 @@ int iris_vb2_queue_setup(struct vb2_queue *q,
 		sizes[0] = f->fmt.pix_mp.plane_fmt[0].sizeimage;
 	}
 
+	// TODO VN: check and remove
 	q->dev = core->dev;
 
 unlock:
@@ -224,6 +225,8 @@ int iris_vb2_start_streaming(struct vb2_queue *q, unsigned int count)
 	}
 
 	iris_scale_power(inst);
+
+	// TODO: VN: check and remove
 	inst->sequence_out = 0;
 
 	ret = iris_check_session_supported(inst);
@@ -266,6 +269,7 @@ void iris_vb2_stop_streaming(struct vb2_queue *q)
 
 	inst = vb2_get_drv_priv(q);
 
+	// TODO: VN: check and remove
 	if (V4L2_TYPE_IS_CAPTURE(q->type) && inst->state == IRIS_INST_INIT)
 		return;
 
@@ -295,11 +299,8 @@ int iris_vb2_buf_prepare(struct vb2_buffer *vb)
 	if (V4L2_TYPE_IS_OUTPUT(vb->vb2_queue->type)) {
 		if (vbuf->field == V4L2_FIELD_ANY)
 			vbuf->field = V4L2_FIELD_NONE;
-		if (vbuf->field != V4L2_FIELD_NONE) {
-			dev_err(inst->core->dev, "%s field isn't supported\n",
-				__func__);
+		if (vbuf->field != V4L2_FIELD_NONE)
 			return -EINVAL;
-		}
 	}
 
 	if (vb->type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE &&

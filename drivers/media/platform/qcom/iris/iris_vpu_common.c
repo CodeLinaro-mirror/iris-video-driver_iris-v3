@@ -4,6 +4,8 @@
  */
 
 #include <linux/iopoll.h>
+#include <linux/pm_opp.h>
+#include <linux/reset.h>
 
 #include "iris_core.h"
 #include "iris_vpu_common.h"
@@ -265,7 +267,7 @@ void iris_vpu_power_off_hw(struct iris_core *core)
 
 void iris_vpu_power_off(struct iris_core *core)
 {
-	iris_opp_set_rate(core, 0);
+	dev_pm_opp_set_rate(core->dev, 0);
 	core->iris_platform_data->vpu_ops->power_off_hw(core);
 	iris_vpu_power_off_controller(core);
 	iris_unset_icc_bw(core);
@@ -276,13 +278,14 @@ void iris_vpu_power_off(struct iris_core *core)
 
 static int iris_vpu_power_on_controller(struct iris_core *core)
 {
+	u32 rst_tbl_size = core->iris_platform_data->clk_rst_tbl_size;
 	int ret;
 
 	ret = iris_enable_power_domains(core, core->pmdomain_tbl->pd_devs[IRIS_CTRL_POWER_DOMAIN]);
 	if (ret)
 		return ret;
 
-	ret = iris_reset_ahb2axi_bridge(core);
+	ret = reset_control_bulk_reset(rst_tbl_size, core->resets);
 	if (ret)
 		goto err_disable_power;
 
@@ -350,7 +353,7 @@ int iris_vpu_power_on(struct iris_core *core)
 	freq = core->power.clk_freq ? core->power.clk_freq :
 				      (u32)ULONG_MAX;
 
-	iris_opp_set_rate(core, freq);
+	dev_pm_opp_set_rate(core->dev, freq);
 
 	core->iris_platform_data->set_preset_registers(core);
 
@@ -361,10 +364,11 @@ int iris_vpu_power_on(struct iris_core *core)
 	return 0;
 
 err_power_off_ctrl:
-	dev_err(core->dev, "power on failed\n");
 	iris_vpu_power_off_controller(core);
 err_unvote_icc:
 	iris_unset_icc_bw(core);
 err:
+	dev_err(core->dev, "power on failed\n");
+
 	return ret;
 }

@@ -20,25 +20,15 @@
 #define STEP_WIDTH 1
 #define STEP_HEIGHT 1
 
-static int iris_v4l2_fh_init(struct iris_inst *inst)
+static void iris_v4l2_fh_init(struct iris_inst *inst)
 {
-	struct iris_core *core = inst->core;
-
-	if (inst->fh.vdev)
-		return -EINVAL;
-
-	v4l2_fh_init(&inst->fh, core->vdev_dec);
+	v4l2_fh_init(&inst->fh, inst->core->vdev_dec);
 	inst->fh.ctrl_handler = &inst->ctrl_handler;
 	v4l2_fh_add(&inst->fh);
-
-	return 0;
 }
 
 static void iris_v4l2_fh_deinit(struct iris_inst *inst)
 {
-	if (!inst->fh.vdev)
-		return;
-
 	v4l2_fh_del(&inst->fh);
 	inst->fh.ctrl_handler = NULL;
 	v4l2_fh_exit(&inst->fh);
@@ -47,12 +37,12 @@ static void iris_v4l2_fh_deinit(struct iris_inst *inst)
 static void iris_add_session(struct iris_inst *inst)
 {
 	struct iris_core *core = inst->core;
-	struct iris_inst *i;
+	struct iris_inst *iter;
 	u32 count = 0;
 
 	mutex_lock(&core->lock);
 
-	list_for_each_entry(i, &core->instances, list)
+	list_for_each_entry(iter, &core->instances, list)
 		count++;
 
 	if (count < core->iris_platform_data->max_session_count)
@@ -64,25 +54,21 @@ static void iris_add_session(struct iris_inst *inst)
 static void iris_remove_session(struct iris_inst *inst)
 {
 	struct iris_core *core = inst->core;
-	struct iris_inst *i, *temp;
+	struct iris_inst *iter, *temp;
 
 	mutex_lock(&core->lock);
-	list_for_each_entry_safe(i, temp, &core->instances, list) {
-		if (i->session_id == inst->session_id) {
-			list_del_init(&i->list);
+	list_for_each_entry_safe(iter, temp, &core->instances, list) {
+		if (iter->session_id == inst->session_id) {
+			list_del_init(&iter->list);
 			break;
 		}
 	}
 	mutex_unlock(&core->lock);
 }
 
-static struct iris_inst *iris_get_inst(struct file *filp, void *fh)
+static inline struct iris_inst *iris_get_inst(struct file *filp, void *fh)
 {
-	if (!filp || !filp->private_data)
-		return NULL;
-
-	return container_of(filp->private_data,
-					struct iris_inst, fh);
+	return container_of(filp->private_data, struct iris_inst, fh);
 }
 
 static void iris_m2m_device_run(void *priv)
@@ -137,7 +123,7 @@ iris_m2m_queue_init(void *priv, struct vb2_queue *src_vq, struct vb2_queue *dst_
 int iris_open(struct file *filp)
 {
 	struct iris_core *core = video_drvdata(filp);
-	struct iris_inst *inst = NULL;
+	struct iris_inst *inst;
 	int ret;
 
 	ret = pm_runtime_resume_and_get(core->dev);
@@ -175,9 +161,7 @@ int iris_open(struct file *filp)
 	init_completion(&inst->completion);
 	init_completion(&inst->flush_completion);
 
-	ret = iris_v4l2_fh_init(inst);
-	if (ret)
-		goto fail_free_inst;
+	iris_v4l2_fh_init(inst);
 
 	inst->m2m_dev = v4l2_m2m_init(&iris_m2m_ops);
 	if (IS_ERR_OR_NULL(inst->m2m_dev)) {
@@ -208,7 +192,6 @@ fail_m2m_release:
 	v4l2_m2m_release(inst->m2m_dev);
 fail_v4l2_fh_deinit:
 	iris_v4l2_fh_deinit(inst);
-fail_free_inst:
 	mutex_destroy(&inst->ctx_q_lock);
 	mutex_destroy(&inst->lock);
 	kfree(inst);
@@ -219,13 +202,11 @@ fail_free_inst:
 static void iris_session_close(struct iris_inst *inst)
 {
 	const struct iris_hfi_command_ops *hfi_ops = inst->core->hfi_ops;
-	bool wait_for_response;
+	bool wait_for_response = true;
 	int ret;
 
 	if (inst->state == IRIS_INST_DEINIT)
 		return;
-
-	wait_for_response = true;
 
 	reinit_completion(&inst->completion);
 
@@ -239,11 +220,7 @@ static void iris_session_close(struct iris_inst *inst)
 
 int iris_close(struct file *filp)
 {
-	struct iris_inst *inst;
-
-	inst = iris_get_inst(filp, NULL);
-	if (!inst)
-		return -EINVAL;
+	struct iris_inst *inst = iris_get_inst(filp, NULL);
 
 	v4l2_ctrl_handler_free(&inst->ctrl_handler);
 	v4l2_m2m_ctx_release(inst->m2m_ctx);
@@ -267,23 +244,15 @@ int iris_close(struct file *filp)
 
 static int iris_enum_fmt(struct file *filp, void *fh, struct v4l2_fmtdesc *f)
 {
-	struct iris_inst *inst;
-
-	inst = iris_get_inst(filp, fh);
-	if (!inst)
-		return -EINVAL;
+	struct iris_inst *inst = iris_get_inst(filp, NULL);
 
 	return iris_vdec_enum_fmt(inst, f);
 }
 
 static int iris_try_fmt_vid_mplane(struct file *filp, void *fh, struct v4l2_format *f)
 {
-	struct iris_inst *inst;
+	struct iris_inst *inst = iris_get_inst(filp, NULL);
 	int ret;
-
-	inst = iris_get_inst(filp, fh);
-	if (!inst)
-		return -EINVAL;
 
 	mutex_lock(&inst->lock);
 	if (inst->state == IRIS_INST_ERROR) {
@@ -301,12 +270,8 @@ unlock:
 
 static int iris_s_fmt_vid_mplane(struct file *filp, void *fh, struct v4l2_format *f)
 {
-	struct iris_inst *inst;
+	struct iris_inst *inst = iris_get_inst(filp, NULL);
 	int ret;
-
-	inst = iris_get_inst(filp, fh);
-	if (!inst)
-		return -EINVAL;
 
 	mutex_lock(&inst->lock);
 	if (inst->state == IRIS_INST_ERROR) {
@@ -324,12 +289,8 @@ unlock:
 
 static int iris_g_fmt_vid_mplane(struct file *filp, void *fh, struct v4l2_format *f)
 {
-	struct iris_inst *inst;
+	struct iris_inst *inst = iris_get_inst(filp, NULL);
 	int ret = 0;
-
-	inst = iris_get_inst(filp, fh);
-	if (!inst)
-		return -EINVAL;
 
 	mutex_lock(&inst->lock);
 	if (inst->state == IRIS_INST_ERROR) {
@@ -353,12 +314,8 @@ unlock:
 static int iris_enum_framesizes(struct file *filp, void *fh,
 				struct v4l2_frmsizeenum *fsize)
 {
+	struct iris_inst *inst = iris_get_inst(filp, NULL);
 	struct platform_inst_caps *platform_caps;
-	struct iris_inst *inst;
-
-	inst = iris_get_inst(filp, fh);
-	if (!inst || !fsize)
-		return -EINVAL;
 
 	if (fsize->index)
 		return -EINVAL;
@@ -382,12 +339,6 @@ static int iris_enum_framesizes(struct file *filp, void *fh,
 
 static int iris_querycap(struct file *filp, void *fh, struct v4l2_capability *cap)
 {
-	struct iris_inst *inst;
-
-	inst = iris_get_inst(filp, fh);
-	if (!inst)
-		return -EINVAL;
-
 	strscpy(cap->driver, IRIS_DRV_NAME, sizeof(cap->driver));
 	strscpy(cap->bus_info, IRIS_BUS_NAME, sizeof(cap->bus_info));
 	memset(cap->reserved, 0, sizeof(cap->reserved));
@@ -399,11 +350,7 @@ static int iris_querycap(struct file *filp, void *fh, struct v4l2_capability *ca
 static int iris_queryctrl(struct file *filp, void *fh, struct v4l2_queryctrl *q_ctrl)
 {
 	struct v4l2_ctrl *ctrl;
-	struct iris_inst *inst;
-
-	inst = iris_get_inst(filp, fh);
-	if (!inst || !q_ctrl)
-		return -EINVAL;
+	struct iris_inst *inst = iris_get_inst(filp, NULL);
 
 	ctrl = v4l2_ctrl_find(&inst->ctrl_handler, q_ctrl->id);
 	if (!ctrl)
@@ -420,12 +367,8 @@ static int iris_queryctrl(struct file *filp, void *fh, struct v4l2_queryctrl *q_
 
 static int iris_querymenu(struct file *filp, void *fh, struct v4l2_querymenu *qmenu)
 {
+	struct iris_inst *inst = iris_get_inst(filp, NULL);
 	struct v4l2_ctrl *ctrl;
-	struct iris_inst *inst;
-
-	inst = iris_get_inst(filp, fh);
-	if (!inst || !qmenu)
-		return -EINVAL;
 
 	ctrl = v4l2_ctrl_find(&inst->ctrl_handler, qmenu->id);
 	if (!ctrl)
@@ -445,11 +388,7 @@ static int iris_querymenu(struct file *filp, void *fh, struct v4l2_querymenu *qm
 
 static int iris_g_selection(struct file *filp, void *fh, struct v4l2_selection *s)
 {
-	struct iris_inst *inst;
-
-	inst = iris_get_inst(filp, fh);
-	if (!inst || !s)
-		return -EINVAL;
+	struct iris_inst *inst = iris_get_inst(filp, NULL);
 
 	if (s->type != V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE &&
 	    s->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)
@@ -477,18 +416,14 @@ static int iris_g_selection(struct file *filp, void *fh, struct v4l2_selection *
 
 static int iris_subscribe_event(struct v4l2_fh *fh, const struct v4l2_event_subscription *sub)
 {
-	struct iris_inst *inst;
-
-	inst = container_of(fh, struct iris_inst, fh);
+	struct iris_inst *inst = container_of(fh, struct iris_inst, fh);
 
 	return iris_vdec_subscribe_event(inst, sub);
 }
 
 static int iris_unsubscribe_event(struct v4l2_fh *fh, const struct v4l2_event_subscription *sub)
 {
-	struct iris_inst *inst;
-
-	inst = container_of(fh, struct iris_inst, fh);
+	struct iris_inst *inst = container_of(fh, struct iris_inst, fh);
 
 	return v4l2_event_unsubscribe(&inst->fh, sub);
 }
@@ -496,12 +431,8 @@ static int iris_unsubscribe_event(struct v4l2_fh *fh, const struct v4l2_event_su
 static int iris_dec_cmd(struct file *filp, void *fh,
 			struct v4l2_decoder_cmd *dec)
 {
-	struct iris_inst *inst;
+	struct iris_inst *inst = iris_get_inst(filp, NULL);
 	int ret = 0;
-
-	inst = iris_get_inst(filp, fh);
-	if (!inst || !dec)
-		return -EINVAL;
 
 	mutex_lock(&inst->lock);
 
@@ -511,6 +442,7 @@ static int iris_dec_cmd(struct file *filp, void *fh,
 		goto unlock;
 	}
 
+	// TODO: VN To check and remove
 	if (inst->state == IRIS_INST_DEINIT)
 		goto unlock;
 
