@@ -130,7 +130,7 @@ struct iris_inst_power {
 };
 
 struct icc_vote_data {
-	int height, width;
+	u32 height, width;
 	u32 fps;
 };
 

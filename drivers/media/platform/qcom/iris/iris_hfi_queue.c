@@ -218,7 +218,7 @@ static void
 iris_hfi_queue_init(struct iris_core *core, u32 queue_id, struct iris_iface_q_info *iface_q)
 {
 	struct iris_hfi_queue_table_header *q_tbl_hdr = core->iface_q_table_vaddr;
-	unsigned int offset = sizeof(*q_tbl_hdr) + (queue_id * IFACEQ_QUEUE_SIZE);
+	u32 offset = sizeof(*q_tbl_hdr) + (queue_id * IFACEQ_QUEUE_SIZE);
 
 	iface_q->device_addr = core->iface_q_table_daddr + offset;
 	iface_q->kernel_vaddr =

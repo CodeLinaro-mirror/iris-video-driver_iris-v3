@@ -271,7 +271,7 @@ static int iris_hfi_gen1_queue_output_buffer(struct iris_inst *inst, struct iris
 static int iris_hfi_gen1_queue_internal_buffer(struct iris_inst *inst, struct iris_buffer *buf)
 {
 	struct hfi_session_set_buffers_pkt *int_pkt;
-	int buffer_type, i;
+	u32 buffer_type, i;
 	u32 packet_size;
 	int ret;
 

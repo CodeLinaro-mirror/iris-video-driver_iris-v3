@@ -37,8 +37,8 @@ static bool iris_vpu3_hw_power_collapsed(struct iris_core *core)
 
 static void iris_vpu3_power_off_hardware(struct iris_core *core)
 {
-	u32 reg_val = 0, value;
-	int ret, i;
+	u32 reg_val = 0, value, i;
+	int ret;
 
 	if (iris_vpu3_hw_power_collapsed(core))
 		goto disable_power;

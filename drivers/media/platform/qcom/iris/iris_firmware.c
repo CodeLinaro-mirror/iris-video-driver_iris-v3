@@ -16,7 +16,7 @@
 
 static int iris_load_fw_to_memory(struct iris_core *core, const char *fw_name)
 {
-	int ret, pas_id = core->iris_platform_data->pas_id;
+	u32 pas_id = core->iris_platform_data->pas_id;
 	const struct firmware *firmware = NULL;
 	struct device *dev = core->dev;
 	struct reserved_mem *rmem;
@@ -25,6 +25,7 @@ static int iris_load_fw_to_memory(struct iris_core *core, const char *fw_name)
 	size_t res_size;
 	ssize_t fw_size;
 	void *mem_virt;
+	int ret;
 
 	if (strlen(fw_name) >= MAX_FIRMWARE_NAME_SIZE - 4)
 		return -EINVAL;

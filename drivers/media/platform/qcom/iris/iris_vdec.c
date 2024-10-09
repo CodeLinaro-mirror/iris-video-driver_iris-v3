@@ -265,7 +265,7 @@ static int iris_vdec_get_num_queued_buffers(struct iris_inst *inst,
 	struct v4l2_m2m_ctx *m2m_ctx = inst->m2m_ctx;
 	struct v4l2_m2m_buffer *buffer, *n;
 	struct iris_buffer *buf;
-	int count = 0;
+	u32 count = 0;
 
 	switch (type) {
 	case BUF_INPUT:
@@ -336,7 +336,8 @@ int iris_vdec_session_streamoff(struct iris_inst *inst, u32 plane)
 {
 	const struct iris_hfi_command_ops *hfi_ops = inst->core->hfi_ops;
 	enum iris_buffer_type buffer_type;
-	int count, ret;
+	u32 count;
+	int ret;
 
 	switch (plane) {
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:

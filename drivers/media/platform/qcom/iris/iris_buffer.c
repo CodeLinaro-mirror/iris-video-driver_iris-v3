@@ -520,7 +520,7 @@ void iris_vb2_queue_error(struct iris_inst *inst)
 }
 
 static struct vb2_v4l2_buffer *
-iris_helper_find_buf(struct iris_inst *inst, unsigned int type, u32 idx)
+iris_helper_find_buf(struct iris_inst *inst, u32 type, u32 idx)
 {
 	struct v4l2_m2m_ctx *m2m_ctx = inst->m2m_ctx;
 
@@ -556,7 +556,7 @@ int iris_vb2_buffer_done(struct iris_inst *inst, struct iris_buffer *buf)
 	struct v4l2_m2m_ctx *m2m_ctx = inst->m2m_ctx;
 	struct vb2_v4l2_buffer *vbuf;
 	struct vb2_buffer *vb2;
-	int type, state;
+	u32 type, state;
 
 	switch (buf->type) {
 	case BUF_INPUT:

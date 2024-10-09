@@ -45,7 +45,7 @@ int iris_set_icc_bw(struct iris_core *core, unsigned long icc_bw)
 
 int iris_unset_icc_bw(struct iris_core *core)
 {
-	int i;
+	u32 i;
 
 	core->power.icc_bw = 0;
 
@@ -88,8 +88,7 @@ int iris_disable_power_domains(struct iris_core *core, struct device *pd_dev)
 static struct clk *iris_get_clk_by_type(struct iris_core *core, enum platform_clk_type clk_type)
 {
 	const struct platform_clk_data *clk_tbl;
-	u32 clk_cnt;
-	int i, j;
+	u32 clk_cnt, i, j;
 
 	clk_tbl = core->iris_platform_data->clk_tbl;
 	clk_cnt = core->iris_platform_data->clk_tbl_size;
