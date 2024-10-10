@@ -8,7 +8,6 @@
 #include "iris_firmware.h"
 #include "iris_core.h"
 #include "iris_hfi_common.h"
-#include "iris_power.h"
 #include "iris_vpu_common.h"
 
 u32 iris_hfi_get_v4l2_color_primaries(u32 hfi_primaries)

@@ -6,7 +6,6 @@
 #ifndef _IRIS_STATE_H_
 #define _IRIS_STATE_H_
 
-struct iris_core;
 struct iris_inst;
 
 /**

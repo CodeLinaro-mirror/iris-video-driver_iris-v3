@@ -8,7 +8,6 @@
 #include "iris_hfi_gen2.h"
 #include "iris_hfi_gen2_defines.h"
 #include "iris_platform_common.h"
-#include "iris_resources.h"
 #include "iris_vpu_common.h"
 
 #define VIDEO_ARCH_LX 1
@@ -108,14 +107,6 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550[] = {
 		.step_or_mask = 1,
 		.value = BIT_DEPTH_8,
 		.hfi_id = HFI_PROP_LUMA_CHROMA_BIT_DEPTH,
-	},
-	{
-		.cap_id = DEFAULT_HEADER,
-		.min = 0,
-		.max = 1,
-		.step_or_mask = 1,
-		.value = 0,
-		.hfi_id = HFI_PROP_DEC_DEFAULT_HEADER,
 	},
 	{
 		.cap_id = RAP_FRAME,
@@ -253,7 +244,7 @@ struct iris_platform_data sm8550_data = {
 	.ubwc_config = &ubwc_config_sm8550,
 	.num_vpp_pipe = 4,
 	.max_session_count = 16,
-	.max_mbpf = ((8192 * 4352) / 256) * 2,
+	.max_core_mbpf = ((8192 * 4352) / 256) * 2,
 	.input_config_params =
 		sm8550_vdec_input_config_params,
 	.input_config_params_size =

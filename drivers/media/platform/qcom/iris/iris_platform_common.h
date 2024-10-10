@@ -64,6 +64,19 @@ struct ubwc_config_data {
 	u32	bank_spreading;
 };
 
+struct platform_inst_caps {
+	u32 min_frame_width;
+	u32 max_frame_width;
+	u32 min_frame_height;
+	u32 max_frame_height;
+	u32 max_mbpf;
+	u32 mb_cycles_vsp;
+	u32 mb_cycles_vpp;
+	u32 mb_cycles_fw;
+	u32 mb_cycles_fw_vpp;
+	u32 num_comv;
+};
+
 enum platform_inst_fw_cap_type {
 	PROFILE = 1,
 	LEVEL,
@@ -73,7 +86,6 @@ enum platform_inst_fw_cap_type {
 	POC,
 	CODED_FRAMES,
 	BIT_DEPTH,
-	DEFAULT_HEADER,
 	RAP_FRAME,
 	DEBLOCK,
 	INST_FW_CAP_MAX,
@@ -87,19 +99,6 @@ enum platform_inst_fw_cap_flags {
 	CAP_FLAG_CLIENT_SET		= BIT(4),
 	CAP_FLAG_BITMASK		= BIT(5),
 	CAP_FLAG_VOLATILE		= BIT(6),
-};
-
-struct platform_inst_caps {
-	u32 min_frame_width;
-	u32 max_frame_width;
-	u32 min_frame_height;
-	u32 max_frame_height;
-	u32 max_mbpf;
-	u32 mb_cycles_vsp;
-	u32 mb_cycles_vpp;
-	u32 mb_cycles_fw;
-	u32 mb_cycles_fw_vpp;
-	u32 num_comv;
 };
 
 struct platform_inst_fw_cap {
@@ -169,7 +168,7 @@ struct iris_platform_data {
 	struct ubwc_config_data *ubwc_config;
 	u32 num_vpp_pipe;
 	u32 max_session_count;
-	u32 max_mbpf;
+	u32 max_core_mbpf;
 	const u32 *input_config_params;
 	unsigned int input_config_params_size;
 	const u32 *output_config_params;

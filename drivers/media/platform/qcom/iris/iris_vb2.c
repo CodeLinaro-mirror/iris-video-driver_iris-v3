@@ -25,7 +25,7 @@ static int iris_check_core_mbpf(struct iris_inst *inst)
 		total_mbpf += iris_get_mbpf(instance);
 	mutex_unlock(&core->lock);
 
-	if (total_mbpf > core->iris_platform_data->max_mbpf)
+	if (total_mbpf > core->iris_platform_data->max_core_mbpf)
 		return -ENOMEM;
 
 	return 0;

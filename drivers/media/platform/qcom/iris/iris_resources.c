@@ -8,6 +8,7 @@
 #include <linux/pm_domain.h>
 #include <linux/pm_opp.h>
 #include <linux/pm_runtime.h>
+#include <linux/reset.h>
 
 #include "iris_core.h"
 #include "iris_resources.h"

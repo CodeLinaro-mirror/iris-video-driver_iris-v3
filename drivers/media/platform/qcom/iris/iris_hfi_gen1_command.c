@@ -169,7 +169,7 @@ static int iris_hfi_gen1_session_stop(struct iris_inst *inst, u32 plane)
 	struct iris_core *core = inst->core;
 	struct hfi_session_pkt pkt;
 	u32 flush_type = 0;
-	int ret;
+	int ret = 0;
 
 	if ((V4L2_TYPE_IS_OUTPUT(plane) &&
 	     inst->state == IRIS_INST_INPUT_STREAMING) ||
@@ -212,7 +212,7 @@ static int iris_hfi_gen1_session_stop(struct iris_inst *inst, u32 plane)
 			ret = iris_wait_for_session_response(inst, true);
 	}
 
-	return 0;
+	return ret;
 }
 
 static int iris_hfi_gen1_session_continue(struct iris_inst *inst, u32 plane)

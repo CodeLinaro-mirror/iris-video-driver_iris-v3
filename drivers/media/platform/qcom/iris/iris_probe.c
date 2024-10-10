@@ -6,6 +6,7 @@
 #include <linux/clk.h>
 #include <linux/interconnect.h>
 #include <linux/module.h>
+#include <linux/pm_domain.h>
 #include <linux/pm_opp.h>
 #include <linux/pm_runtime.h>
 #include <linux/reset.h>

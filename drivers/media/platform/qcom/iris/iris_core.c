@@ -7,7 +7,6 @@
 
 #include "iris_core.h"
 #include "iris_firmware.h"
-#include "iris_power.h"
 #include "iris_state.h"
 #include "iris_vpu_common.h"
 
