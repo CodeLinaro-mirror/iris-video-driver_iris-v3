@@ -104,7 +104,6 @@ irqreturn_t iris_hfi_isr_handler(int irq, void *data)
 	if (!core)
 		return IRQ_NONE;
 
-	// TODO: VN: Add core state check here
 	mutex_lock(&core->lock);
 	pm_runtime_mark_last_busy(core->dev);
 	iris_vpu_clear_interrupt(core);

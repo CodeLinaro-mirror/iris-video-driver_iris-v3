@@ -445,7 +445,6 @@ static int iris_dec_cmd(struct file *filp, void *fh,
 		goto unlock;
 	}
 
-	// TODO: VN To check and remove
 	if (inst->state == IRIS_INST_DEINIT)
 		goto unlock;
 

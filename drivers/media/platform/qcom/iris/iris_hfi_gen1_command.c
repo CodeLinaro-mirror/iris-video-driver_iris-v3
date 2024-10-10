@@ -428,7 +428,6 @@ iris_hfi_gen1_packet_session_set_property(struct hfi_session_set_property_pkt *p
 		packet->shdr.hdr.size += sizeof(u32) + sizeof(*hfi);
 		break;
 	}
-	// TODO: VN: Check and remove
 	case HFI_PROPERTY_PARAM_UNCOMPRESSED_PLANE_ACTUAL_CONSTRAINTS_INFO: {
 		struct hfi_uncompressed_plane_actual_constraints_info *info = prop_data;
 

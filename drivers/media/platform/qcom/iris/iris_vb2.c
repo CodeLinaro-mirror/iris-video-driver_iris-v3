@@ -226,9 +226,6 @@ int iris_vb2_start_streaming(struct vb2_queue *q, unsigned int count)
 
 	iris_scale_power(inst);
 
-	// TODO: VN: check and remove
-	inst->sequence_out = 0;
-
 	ret = iris_check_session_supported(inst);
 	if (ret)
 		goto error;
@@ -269,7 +266,6 @@ void iris_vb2_stop_streaming(struct vb2_queue *q)
 
 	inst = vb2_get_drv_priv(q);
 
-	// TODO: VN: check and remove
 	if (V4L2_TYPE_IS_CAPTURE(q->type) && inst->state == IRIS_INST_INIT)
 		return;
 
