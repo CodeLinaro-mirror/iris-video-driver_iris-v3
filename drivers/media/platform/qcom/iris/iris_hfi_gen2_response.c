@@ -898,8 +898,6 @@ static void iris_hfi_gen2_response_handler(struct iris_core *core)
 	memset(core->response_packet, 0, sizeof(struct iris_hfi_header));
 	while (!iris_hfi_queue_msg_read(core, core->response_packet)) {
 		iris_hfi_gen2_handle_response(core, core->response_packet);
-		if (core->state == IRIS_CORE_ERROR)
-			break;
 		memset(core->response_packet, 0, sizeof(struct iris_hfi_header));
 	}
 

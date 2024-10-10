@@ -159,8 +159,18 @@ int iris_hfi_queue_msg_read(struct iris_core *core, void *pkt)
 	int ret = 0;
 
 	mutex_lock(&core->lock);
-	if (iris_hfi_queue_read(q_info, pkt))
+	if (core->state != IRIS_CORE_INIT) {
+		ret = -EINVAL;
+		goto unlock;
+	}
+
+	q_info = &core->message_queue;
+	if (iris_hfi_queue_read(q_info, pkt)) {
 		ret = -ENODATA;
+		goto unlock;
+	}
+
+unlock:
 	mutex_unlock(&core->lock);
 
 	return ret;
@@ -172,7 +182,7 @@ int iris_hfi_queue_dbg_read(struct iris_core *core, void *pkt)
 	int ret = 0;
 
 	mutex_lock(&core->lock);
-	if (core->state == IRIS_CORE_ERROR) {
+	if (core->state != IRIS_CORE_INIT) {
 		ret = -EINVAL;
 		goto unlock;
 	}
