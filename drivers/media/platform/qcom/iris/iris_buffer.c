@@ -14,6 +14,13 @@
 #define PIXELS_4K 4096
 #define MAX_WIDTH 4096
 #define MAX_HEIGHT 2304
+#define Y_STRIDE_ALIGN 128
+#define UV_STRIDE_ALIGN 128
+#define Y_SCANLINE_ALIGN 32
+#define UV_SCANLINE_ALIGN 16
+#define UV_SCANLINE_ALIGN_QC08C 32
+#define META_STRIDE_ALIGNED 64
+#define META_SCANLINE_ALIGNED 16
 #define NUM_MBS_4K (DIV_ROUND_UP(MAX_WIDTH, 16) * DIV_ROUND_UP(MAX_HEIGHT, 16))
 
 /*
@@ -22,12 +29,12 @@
  * by an interleaved U/V plane containing 8 bit 2x2 subsampled
  * colour difference samples.
  *
- * <-------- Y/UV_Stride -------->
+ * <-Y/UV_Stride (aligned to 128)->
  * <------- Width ------->
  * Y Y Y Y Y Y Y Y Y Y Y Y . . . .  ^           ^
  * Y Y Y Y Y Y Y Y Y Y Y Y . . . .  |           |
  * Y Y Y Y Y Y Y Y Y Y Y Y . . . .  Height      |
- * Y Y Y Y Y Y Y Y Y Y Y Y . . . .  |          y_scanlines
+ * Y Y Y Y Y Y Y Y Y Y Y Y . . . .  |          y_scanlines (aligned to 32)
  * Y Y Y Y Y Y Y Y Y Y Y Y . . . .  |           |
  * Y Y Y Y Y Y Y Y Y Y Y Y . . . .  |           |
  * Y Y Y Y Y Y Y Y Y Y Y Y . . . .  |           |
@@ -39,10 +46,10 @@
  * U V U V U V U V U V U V . . . .  ^
  * U V U V U V U V U V U V . . . .  |
  * U V U V U V U V U V U V . . . .  |
- * U V U V U V U V U V U V . . . .  uv_scanlines
+ * U V U V U V U V U V U V . . . .  uv_scanlines (aligned to 16)
  * . . . . . . . . . . . . . . . .  |
  * . . . . . . . . . . . . . . . .  V
- * . . . . . . . . . . . . . . . .  --> Buffer size alignment
+ * . . . . . . . . . . . . . . . .  --> Buffer size aligned to 4K
  *
  * y_stride : Width aligned to 128
  * uv_stride : Width aligned to 128
@@ -50,16 +57,18 @@
  * uv_scanlines: Height/2 aligned to 16
  * Total size = align((y_stride * y_scanlines
  *          + uv_stride * uv_scanlines , 4096)
+ *
+ * Note: All the alignments are hardware requirements.
  */
 static u32 iris_output_buffer_size_nv12(struct iris_inst *inst)
 {
 	u32 y_plane, uv_plane, y_stride, uv_stride, y_scanlines, uv_scanlines;
 	struct v4l2_format *f = inst->fmt_dst;
 
-	y_stride = ALIGN(f->fmt.pix_mp.width, 128);
-	uv_stride = ALIGN(f->fmt.pix_mp.width, 128);
-	y_scanlines = ALIGN(f->fmt.pix_mp.height, 32);
-	uv_scanlines = ALIGN((f->fmt.pix_mp.height + 1) >> 1, 16);
+	y_stride = ALIGN(f->fmt.pix_mp.width, Y_STRIDE_ALIGN);
+	uv_stride = ALIGN(f->fmt.pix_mp.width, UV_STRIDE_ALIGN);
+	y_scanlines = ALIGN(f->fmt.pix_mp.height, Y_SCANLINE_ALIGN);
+	uv_scanlines = ALIGN((f->fmt.pix_mp.height + 1) >> 1, UV_SCANLINE_ALIGN);
 	y_plane = y_stride * y_scanlines;
 	uv_plane = uv_stride * uv_scanlines;
 
@@ -91,12 +100,12 @@ static u32 iris_output_buffer_size_nv12(struct iris_inst *inst)
  * Each tile in Y_UBWC_Plane/UV_UBWC_Plane is independently decodable
  * and randomly accessible. There is no dependency between tiles.
  *
- * <----- y_meta_stride ---->
+ * <----- y_meta_stride ----> (aligned to 64)
  * <-------- Width ------>
  * M M M M M M M M M M M M . .      ^           ^
  * M M M M M M M M M M M M . .      |           |
  * M M M M M M M M M M M M . .      Height      |
- * M M M M M M M M M M M M . .      |         y_meta_scanlines
+ * M M M M M M M M M M M M . .      |         y_meta_scanlines  (aligned to 16)
  * M M M M M M M M M M M M . .      |           |
  * M M M M M M M M M M M M . .      |           |
  * M M M M M M M M M M M M . .      |           |
@@ -105,12 +114,12 @@ static u32 iris_output_buffer_size_nv12(struct iris_inst *inst)
  * . . . . . . . . . . . . . .                  |
  * . . . . . . . . . . . . . .      -------> Buffer size aligned to 4k
  * . . . . . . . . . . . . . .                  V
- * <--Compressed tile y_stride--->
+ * <--Compressed tile y_stride---> (aligned to 128)
  * <------- Width ------->
  * Y* Y* Y* Y* Y* Y* Y* Y* . . . .  ^           ^
  * Y* Y* Y* Y* Y* Y* Y* Y* . . . .  |           |
  * Y* Y* Y* Y* Y* Y* Y* Y* . . . .  Height      |
- * Y* Y* Y* Y* Y* Y* Y* Y* . . . .  |        Macro_tile y_scanlines
+ * Y* Y* Y* Y* Y* Y* Y* Y* . . . .  |        Macro_tile y_scanlines (aligned to 32)
  * Y* Y* Y* Y* Y* Y* Y* Y* . . . .  |           |
  * Y* Y* Y* Y* Y* Y* Y* Y* . . . .  |           |
  * Y* Y* Y* Y* Y* Y* Y* Y* . . . .  |           |
@@ -119,38 +128,40 @@ static u32 iris_output_buffer_size_nv12(struct iris_inst *inst)
  * . . . . . . . . . . . . . . . .              |
  * . . . . . . . . . . . . . . . .  -------> Buffer size aligned to 4k
  * . . . . . . . . . . . . . . . .              V
- * <----- uv_meta_stride ---->
+ * <----- uv_meta_stride ---->  (aligned to 64)
  * M M M M M M M M M M M M . .      ^
  * M M M M M M M M M M M M . .      |
  * M M M M M M M M M M M M . .      |
- * M M M M M M M M M M M M . .      uv_meta_scanlines
+ * M M M M M M M M M M M M . .      uv_meta_scanlines (aligned to 16)
  * . . . . . . . . . . . . . .      |
  * . . . . . . . . . . . . . .      V
  * . . . . . . . . . . . . . .      -------> Buffer size aligned to 4k
- * <--Compressed tile uv_stride--->
+ * <--Compressed tile uv_stride---> (aligned to 128)
  * U* V* U* V* U* V* U* V* . . . .  ^
  * U* V* U* V* U* V* U* V* . . . .  |
  * U* V* U* V* U* V* U* V* . . . .  |
- * U* V* U* V* U* V* U* V* . . . .  uv_scanlines
+ * U* V* U* V* U* V* U* V* . . . .  uv_scanlines (aligned to 32)
  * . . . . . . . . . . . . . . . .  |
  * . . . . . . . . . . . . . . . .  V
  * . . . . . . . . . . . . . . . .  -------> Buffer size aligned to 4k
  *
- * y_stride = align(Width, 128)
- * uv_stride = align(Width, 128)
- * y_scanlines = align(Height, 32)
- * uv_scanlines = align(Height/2, 16)
- * y_plane = align(y_stride * y_scanlines, 4096)
- * uv_plane = align(uv_stride * uv_scanlines, 4096)
- * y_meta_stride = align(roundup(Width, Y_TileWidth), 64)
- * y_meta_scanlines = align(roundup(Height, Y_TileHeight), 16)
- * y_meta_plane = align(y_meta_stride * y_meta_scanlines, 4096)
- * uv_meta_stride = align(roundup(Width, UV_TileWidth), 64)
- * uv_meta_scanlines = align(roundup(Height, UV_TileHeight), 16)
- * uv_meta_plane = align(uv_meta_stride * uv_meta_scanlines, 4096)
+ * y_stride: width aligned to 128
+ * uv_stride: width aligned to 128
+ * y_scanlines: height aligned to 32
+ * uv_scanlines: height aligned to 32
+ * y_plane: buffer size aligned to 4096
+ * uv_plane: buffer size aligned to 4096
+ * y_meta_stride: width aligned to 64
+ * y_meta_scanlines: height aligned to 16
+ * y_meta_plane: buffer size aligned to 4096
+ * uv_meta_stride: width aligned to 64
+ * uv_meta_scanlines: height aligned to 16
+ * uv_meta_plane: buffer size aligned to 4096
  *
  * Total size = align( y_plane + uv_plane +
  *           y_meta_plane + uv_meta_plane, 4096)
+ *
+ * Note: All the alignments are hardware requirements.
  */
 static u32 iris_output_buffer_size_qc08c(struct iris_inst *inst)
 {
@@ -159,19 +170,26 @@ static u32 iris_output_buffer_size_qc08c(struct iris_inst *inst)
 	u32 uv_meta_stride, uv_meta_plane;
 	u32 y_meta_stride, y_meta_plane;
 
-	y_meta_stride = ALIGN(DIV_ROUND_UP(f->fmt.pix_mp.width, 32), 64);
-	y_meta_plane = y_meta_stride * ALIGN(DIV_ROUND_UP(f->fmt.pix_mp.height, 8), 16);
+	y_meta_stride = ALIGN(DIV_ROUND_UP(f->fmt.pix_mp.width, META_STRIDE_ALIGNED >> 1),
+					   META_STRIDE_ALIGNED);
+	y_meta_plane = y_meta_stride * ALIGN(DIV_ROUND_UP(f->fmt.pix_mp.height,
+							  META_SCANLINE_ALIGNED >> 1),
+					     META_SCANLINE_ALIGNED);
 	y_meta_plane = ALIGN(y_meta_plane, PIXELS_4K);
 
-	y_stride = ALIGN(f->fmt.pix_mp.width, 128);
-	y_plane = ALIGN(y_stride * ALIGN(f->fmt.pix_mp.height, 32), PIXELS_4K);
+	y_stride = ALIGN(f->fmt.pix_mp.width, Y_STRIDE_ALIGN);
+	y_plane = ALIGN(y_stride * ALIGN(f->fmt.pix_mp.height, Y_SCANLINE_ALIGN), PIXELS_4K);
 
-	uv_meta_stride = ALIGN(DIV_ROUND_UP(f->fmt.pix_mp.width / 2, 16), 64);
-	uv_meta_plane = uv_meta_stride * ALIGN(DIV_ROUND_UP(f->fmt.pix_mp.height / 2, 8), 16);
+	uv_meta_stride = ALIGN(DIV_ROUND_UP(f->fmt.pix_mp.width / 2, META_STRIDE_ALIGNED >> 2),
+			       META_STRIDE_ALIGNED);
+	uv_meta_plane = uv_meta_stride * ALIGN(DIV_ROUND_UP(f->fmt.pix_mp.height / 2,
+							    META_SCANLINE_ALIGNED >> 1),
+					       META_SCANLINE_ALIGNED);
 	uv_meta_plane = ALIGN(uv_meta_plane, PIXELS_4K);
 
-	uv_stride = ALIGN(f->fmt.pix_mp.width, 128);
-	uv_plane = ALIGN(uv_stride * ALIGN(f->fmt.pix_mp.height / 2, 32), PIXELS_4K);
+	uv_stride = ALIGN(f->fmt.pix_mp.width, UV_STRIDE_ALIGN);
+	uv_plane = ALIGN(uv_stride * ALIGN(f->fmt.pix_mp.height / 2, UV_SCANLINE_ALIGN_QC08C),
+			 PIXELS_4K);
 
 	return ALIGN(y_meta_plane + y_plane + uv_meta_plane + uv_plane, PIXELS_4K);
 }
