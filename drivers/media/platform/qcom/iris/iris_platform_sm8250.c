@@ -11,7 +11,7 @@
 #include "iris_hfi_gen1_defines.h"
 #include "iris_vpu_common.h"
 
-static struct platform_inst_fw_cap instance_fw_cap_data_sm8250[] = {
+static struct platform_inst_fw_cap inst_fw_cap_sm8250[] = {
 	{
 		.cap_id = PIPE,
 		.min = PIPE_1,
@@ -41,7 +41,7 @@ static struct platform_inst_fw_cap instance_fw_cap_data_sm8250[] = {
 	},
 };
 
-static struct platform_inst_caps platform_inst_driver_cap_sm8250 = {
+static struct platform_inst_caps platform_inst_cap_sm8250 = {
 	.min_frame_width = 128,
 	.max_frame_width = 8192,
 	.min_frame_height = 128,
@@ -128,9 +128,9 @@ struct iris_platform_data sm8250_data = {
 	.dma_mask = GENMASK(31, 29) - 1,
 	.fwname = "qcom/vpu/vpu20_p4.mbn",
 	.pas_id = IRIS_PAS_ID,
-	.inst_driver_caps = &platform_inst_driver_cap_sm8250,
-	.inst_fw_cap_data = instance_fw_cap_data_sm8250,
-	.inst_fw_cap_data_size = ARRAY_SIZE(instance_fw_cap_data_sm8250),
+	.inst_caps = &platform_inst_cap_sm8250,
+	.inst_fw_caps = inst_fw_cap_sm8250,
+	.inst_fw_caps_size = ARRAY_SIZE(inst_fw_cap_sm8250),
 	.tz_cp_config_data = &tz_cp_config_sm8250,
 	.hw_response_timeout = HW_RESPONSE_TIMEOUT_VALUE,
 	.num_vpp_pipe = 4,

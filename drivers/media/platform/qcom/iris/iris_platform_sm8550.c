@@ -13,7 +13,7 @@
 
 #define VIDEO_ARCH_LX 1
 
-static struct platform_inst_fw_cap instance_fw_cap_data_sm8550[] = {
+static struct platform_inst_fw_cap inst_fw_cap_sm8550[] = {
 	{
 		.cap_id = PROFILE,
 		.min = V4L2_MPEG_VIDEO_H264_PROFILE_BASELINE,
@@ -129,7 +129,7 @@ static struct platform_inst_fw_cap instance_fw_cap_data_sm8550[] = {
 	},
 };
 
-static struct platform_inst_caps platform_inst_driver_cap_sm8550 = {
+static struct platform_inst_caps platform_inst_cap_sm8550 = {
 	.min_frame_width = 96,
 	.max_frame_width = 8192,
 	.min_frame_height = 96,
@@ -244,9 +244,9 @@ struct iris_platform_data sm8550_data = {
 	.dma_mask = GENMASK(31, 29) - 1,
 	.fwname = "qcom/vpu/vpu30_p4.mbn",
 	.pas_id = IRIS_PAS_ID,
-	.inst_driver_caps = &platform_inst_driver_cap_sm8550,
-	.inst_fw_cap_data = instance_fw_cap_data_sm8550,
-	.inst_fw_cap_data_size = ARRAY_SIZE(instance_fw_cap_data_sm8550),
+	.inst_caps = &platform_inst_cap_sm8550,
+	.inst_fw_caps = inst_fw_cap_sm8550,
+	.inst_fw_caps_size = ARRAY_SIZE(inst_fw_cap_sm8550),
 	.tz_cp_config_data = &tz_cp_config_sm8550,
 	.core_arch = VIDEO_ARCH_LX,
 	.hw_response_timeout = HW_RESPONSE_TIMEOUT_VALUE,

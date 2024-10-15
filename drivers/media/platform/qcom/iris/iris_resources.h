@@ -8,12 +8,6 @@
 
 struct iris_core;
 
-struct icc_info {
-	const char		*name;
-	u32			bw_min_kbps;
-	u32			bw_max_kbps;
-};
-
 int iris_enable_power_domains(struct iris_core *core, struct device *pd_dev);
 int iris_disable_power_domains(struct iris_core *core, struct device *pd_dev);
 int iris_unset_icc_bw(struct iris_core *core);

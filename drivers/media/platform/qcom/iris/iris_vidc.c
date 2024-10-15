@@ -318,7 +318,7 @@ static int iris_enum_framesizes(struct file *filp, void *fh,
 				struct v4l2_frmsizeenum *fsize)
 {
 	struct iris_inst *inst = iris_get_inst(filp, NULL);
-	struct platform_inst_caps *platform_caps;
+	struct platform_inst_caps *caps;
 
 	if (fsize->index)
 		return -EINVAL;
@@ -327,14 +327,14 @@ static int iris_enum_framesizes(struct file *filp, void *fh,
 	    fsize->pixel_format != V4L2_PIX_FMT_NV12)
 		return -EINVAL;
 
-	platform_caps = inst->core->iris_platform_data->inst_driver_caps;
+	caps = inst->core->iris_platform_data->inst_caps;
 
 	fsize->type = V4L2_FRMSIZE_TYPE_STEPWISE;
-	fsize->stepwise.min_width = platform_caps->min_frame_width;
-	fsize->stepwise.max_width = platform_caps->max_frame_width;
+	fsize->stepwise.min_width = caps->min_frame_width;
+	fsize->stepwise.max_width = caps->max_frame_width;
 	fsize->stepwise.step_width = STEP_WIDTH;
-	fsize->stepwise.min_height = platform_caps->min_frame_height;
-	fsize->stepwise.max_height = platform_caps->max_frame_height;
+	fsize->stepwise.min_height = caps->min_frame_height;
+	fsize->stepwise.max_height = caps->max_frame_height;
 	fsize->stepwise.step_height = STEP_HEIGHT;
 
 	return 0;

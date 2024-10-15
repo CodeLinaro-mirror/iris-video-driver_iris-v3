@@ -81,7 +81,7 @@ disable_power:
 
 static u64 iris_vpu3_calculate_frequency(struct iris_inst *inst, size_t data_size)
 {
-	struct platform_inst_caps *platform_caps = inst->core->iris_platform_data->inst_driver_caps;
+	struct platform_inst_caps *caps = inst->core->iris_platform_data->inst_caps;
 	struct v4l2_format *inp_f = inst->fmt_src;
 	u32 height, width, mbs_per_second, mbpf;
 	u64 vsp_cycles, vpp_cycles, fw_cycles;
@@ -94,14 +94,14 @@ static u64 iris_vpu3_calculate_frequency(struct iris_inst *inst, size_t data_siz
 	mbpf = NUM_MBS_PER_FRAME(height, width);
 	mbs_per_second = mbpf * fps;
 
-	fw_cycles = fps * platform_caps->mb_cycles_fw;
-	fw_vpp_cycles = fps * platform_caps->mb_cycles_fw_vpp;
+	fw_cycles = fps * caps->mb_cycles_fw;
+	fw_vpp_cycles = fps * caps->mb_cycles_fw_vpp;
 
-	vpp_cycles = mbs_per_second * platform_caps->mb_cycles_vpp /
-		inst->fw_cap[PIPE].value;
+	vpp_cycles = mbs_per_second * caps->mb_cycles_vpp /
+		inst->fw_caps[PIPE].value;
 	vpp_cycles += max(vpp_cycles / 20, fw_vpp_cycles);
 
-	if (inst->fw_cap[PIPE].value > 1)
+	if (inst->fw_caps[PIPE].value > 1)
 		vpp_cycles += div_u64(vpp_cycles * 59, 1000);
 
 	bitrate = fps * data_size * 8;
@@ -110,7 +110,7 @@ static u64 iris_vpu3_calculate_frequency(struct iris_inst *inst, size_t data_siz
 	vsp_cycles = div_u64(vsp_cycles, 2);
 	vsp_cycles = div_u64(vsp_cycles * 21, 20);
 
-	if (inst->fw_cap[STAGE].value == STAGE_1)
+	if (inst->fw_caps[STAGE].value == STAGE_1)
 		vsp_cycles = vsp_cycles * 3;
 
 	freq = max3(vpp_cycles, vsp_cycles, fw_cycles);

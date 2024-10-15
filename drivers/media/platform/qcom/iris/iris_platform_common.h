@@ -79,7 +79,7 @@ enum platform_inst_fw_cap_type {
 	INST_FW_CAP_MAX,
 };
 
-enum platform_inst_cap_flags {
+enum platform_inst_fw_cap_flags {
 	CAP_FLAG_DYNAMIC_ALLOWED	= BIT(0),
 	CAP_FLAG_MENU			= BIT(1),
 	CAP_FLAG_INPUT_PORT		= BIT(2),
@@ -109,7 +109,7 @@ struct platform_inst_fw_cap {
 	s64 step_or_mask;
 	s64 value;
 	u32 hfi_id;
-	enum platform_inst_cap_flags flags;
+	enum platform_inst_fw_cap_flags flags;
 	int (*set)(struct iris_inst *inst,
 		   enum platform_inst_fw_cap_type cap_id);
 };
@@ -160,9 +160,9 @@ struct iris_platform_data {
 	u64 dma_mask;
 	const char *fwname;
 	u32 pas_id;
-	struct platform_inst_caps *inst_driver_caps;
-	struct platform_inst_fw_cap *inst_fw_cap_data;
-	u32 inst_fw_cap_data_size;
+	struct platform_inst_caps *inst_caps;
+	struct platform_inst_fw_cap *inst_fw_caps;
+	u32 inst_fw_caps_size;
 	struct tz_cp_config *tz_cp_config_data;
 	u32 core_arch;
 	u32 hw_response_timeout;

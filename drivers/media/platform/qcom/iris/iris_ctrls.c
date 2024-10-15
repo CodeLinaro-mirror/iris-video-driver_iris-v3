@@ -60,7 +60,7 @@ static int iris_vdec_op_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
 	default:
 		cap_id = iris_get_cap_id(ctrl->id);
 		if (iris_valid_cap_id(cap_id))
-			ctrl->val = inst->fw_cap[cap_id].value;
+			ctrl->val = inst->fw_caps[cap_id].value;
 		else
 			return -EINVAL;
 	}
@@ -75,18 +75,19 @@ static int iris_vdec_op_s_ctrl(struct v4l2_ctrl *ctrl)
 	struct platform_inst_fw_cap *cap;
 	struct vb2_queue *q;
 
-	cap = &inst->fw_cap[0];
+	cap = &inst->fw_caps[0];
 	cap_id = iris_get_cap_id(ctrl->id);
 	if (!iris_valid_cap_id(cap_id))
 		return -EINVAL;
 
 	q = v4l2_m2m_get_src_vq(inst->m2m_ctx);
 	if (vb2_is_streaming(q) &&
-	    (!(inst->fw_cap[cap_id].flags & CAP_FLAG_DYNAMIC_ALLOWED)))
+	    (!(inst->fw_caps[cap_id].flags & CAP_FLAG_DYNAMIC_ALLOWED)))
 		return -EINVAL;
 
 	cap[cap_id].flags |= CAP_FLAG_CLIENT_SET;
-	inst->fw_cap[cap_id].value = ctrl->val;
+
+	inst->fw_caps[cap_id].value = ctrl->val;
 
 	return 0;
 }
@@ -98,7 +99,7 @@ static const struct v4l2_ctrl_ops iris_ctrl_ops = {
 
 int iris_ctrls_init(struct iris_inst *inst)
 {
-	struct platform_inst_fw_cap *cap = &inst->fw_cap[0];
+	struct platform_inst_fw_cap *cap = &inst->fw_caps[0];
 	u32 num_ctrls = 0, ctrl_idx = 0, idx = 0;
 	u32 v4l2_id;
 	int ret;
@@ -169,33 +170,33 @@ error:
 
 void iris_session_init_caps(struct iris_core *core)
 {
-	struct platform_inst_fw_cap *inst_plat_cap_data;
-	u32 i, num_inst_cap, cap_id;
+	struct platform_inst_fw_cap *caps;
+	u32 i, num_cap, cap_id;
 
-	inst_plat_cap_data = core->iris_platform_data->inst_fw_cap_data;
-	num_inst_cap = core->iris_platform_data->inst_fw_cap_data_size;
+	caps = core->iris_platform_data->inst_fw_caps;
+	num_cap = core->iris_platform_data->inst_fw_caps_size;
 
-	for (i = 0; i < num_inst_cap; i++) {
-		cap_id = inst_plat_cap_data[i].cap_id;
+	for (i = 0; i < num_cap; i++) {
+		cap_id = caps[i].cap_id;
 		if (!iris_valid_cap_id(cap_id))
 			continue;
 
-		core->inst_fw_cap[cap_id].cap_id = inst_plat_cap_data[i].cap_id;
-		core->inst_fw_cap[cap_id].min = inst_plat_cap_data[i].min;
-		core->inst_fw_cap[cap_id].max = inst_plat_cap_data[i].max;
-		core->inst_fw_cap[cap_id].step_or_mask = inst_plat_cap_data[i].step_or_mask;
-		core->inst_fw_cap[cap_id].value = inst_plat_cap_data[i].value;
-		core->inst_fw_cap[cap_id].flags = inst_plat_cap_data[i].flags;
-		core->inst_fw_cap[cap_id].hfi_id = inst_plat_cap_data[i].hfi_id;
+		core->inst_fw_caps[cap_id].cap_id = caps[i].cap_id;
+		core->inst_fw_caps[cap_id].min = caps[i].min;
+		core->inst_fw_caps[cap_id].max = caps[i].max;
+		core->inst_fw_caps[cap_id].step_or_mask = caps[i].step_or_mask;
+		core->inst_fw_caps[cap_id].value = caps[i].value;
+		core->inst_fw_caps[cap_id].flags = caps[i].flags;
+		core->inst_fw_caps[cap_id].hfi_id = caps[i].hfi_id;
 	}
 }
 
 static u32 iris_get_port_info(struct iris_inst *inst,
 			      enum platform_inst_fw_cap_type cap_id)
 {
-	if (inst->fw_cap[cap_id].flags & CAP_FLAG_INPUT_PORT)
+	if (inst->fw_caps[cap_id].flags & CAP_FLAG_INPUT_PORT)
 		return HFI_PORT_BITSTREAM;
-	else if (inst->fw_cap[cap_id].flags & CAP_FLAG_OUTPUT_PORT)
+	else if (inst->fw_caps[cap_id].flags & CAP_FLAG_OUTPUT_PORT)
 		return HFI_PORT_RAW;
 
 	return HFI_PORT_NONE;
@@ -204,8 +205,8 @@ static u32 iris_get_port_info(struct iris_inst *inst,
 int iris_set_u32_enum(struct iris_inst *inst, enum platform_inst_fw_cap_type cap_id)
 {
 	const struct iris_hfi_command_ops *hfi_ops = inst->core->hfi_ops;
-	u32 hfi_value = inst->fw_cap[cap_id].value;
-	u32 hfi_id = inst->fw_cap[cap_id].hfi_id;
+	u32 hfi_value = inst->fw_caps[cap_id].value;
+	u32 hfi_id = inst->fw_caps[cap_id].hfi_id;
 
 	return hfi_ops->session_set_property(inst, hfi_id,
 					     HFI_HOST_FLAGS_NONE,
@@ -217,8 +218,8 @@ int iris_set_u32_enum(struct iris_inst *inst, enum platform_inst_fw_cap_type cap
 int iris_set_u32(struct iris_inst *inst, enum platform_inst_fw_cap_type cap_id)
 {
 	const struct iris_hfi_command_ops *hfi_ops = inst->core->hfi_ops;
-	u32 hfi_value = inst->fw_cap[cap_id].value;
-	u32 hfi_id = inst->fw_cap[cap_id].hfi_id;
+	u32 hfi_value = inst->fw_caps[cap_id].value;
+	u32 hfi_id = inst->fw_caps[cap_id].hfi_id;
 
 	return hfi_ops->session_set_property(inst, hfi_id,
 					     HFI_HOST_FLAGS_NONE,
@@ -231,7 +232,7 @@ int iris_set_stage(struct iris_inst *inst, enum platform_inst_fw_cap_type cap_id
 {
 	const struct iris_hfi_command_ops *hfi_ops = inst->core->hfi_ops;
 	struct v4l2_format *inp_f = inst->fmt_src;
-	u32 hfi_id = inst->fw_cap[cap_id].hfi_id;
+	u32 hfi_id = inst->fw_caps[cap_id].hfi_id;
 	u32 height = inp_f->fmt.pix_mp.height;;
 	u32 width = inp_f->fmt.pix_mp.width;
 	u32 work_mode = STAGE_2;
@@ -249,8 +250,8 @@ int iris_set_stage(struct iris_inst *inst, enum platform_inst_fw_cap_type cap_id
 int iris_set_pipe(struct iris_inst *inst, enum platform_inst_fw_cap_type cap_id)
 {
 	const struct iris_hfi_command_ops *hfi_ops = inst->core->hfi_ops;
-	u32 work_route = inst->fw_cap[PIPE].value;
-	u32 hfi_id = inst->fw_cap[cap_id].hfi_id;
+	u32 work_route = inst->fw_caps[PIPE].value;
+	u32 hfi_id = inst->fw_caps[cap_id].hfi_id;
 
 	return hfi_ops->session_set_property(inst, hfi_id,
 					     HFI_HOST_FLAGS_NONE,
@@ -271,7 +272,7 @@ int iris_set_properties(struct iris_inst *inst, u32 plane)
 		return ret;
 
 	for (i = 1; i < INST_FW_CAP_MAX; i++) {
-		cap = &inst->fw_cap[i];
+		cap = &inst->fw_caps[i];
 		if (!iris_valid_cap_id(cap->cap_id))
 			continue;
 

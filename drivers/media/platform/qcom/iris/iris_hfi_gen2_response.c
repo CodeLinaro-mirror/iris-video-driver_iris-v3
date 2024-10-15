@@ -550,9 +550,9 @@ static void iris_hfi_gen2_read_input_subcr_params(struct iris_inst *inst)
 	inst->crop.width = pixmp_ip->width -
 		((subsc_params.crop_offsets[1] >> 16) & 0xFFFF) - inst->crop.left;
 
-	inst->fw_cap[PROFILE].value = subsc_params.profile;
-	inst->fw_cap[LEVEL].value = subsc_params.level;
-	inst->fw_cap[POC].value = subsc_params.pic_order_cnt;
+	inst->fw_caps[PROFILE].value = subsc_params.profile;
+	inst->fw_caps[LEVEL].value = subsc_params.level;
+	inst->fw_caps[POC].value = subsc_params.pic_order_cnt;
 
 	if (subsc_params.bit_depth != BIT_DEPTH_8 ||
 	    !(subsc_params.coded_frames & HFI_BITMASK_FRAME_MBS_ONLY_FLAG)) {
@@ -771,11 +771,11 @@ static void iris_hfi_gen2_init_src_change_param(struct iris_inst *inst)
 					     full_range, video_format,
 					     video_signal_type_present_flag);
 
-	subsc_params->profile = inst->fw_cap[PROFILE].value;
-	subsc_params->level = inst->fw_cap[LEVEL].value;
-	subsc_params->pic_order_cnt = inst->fw_cap[POC].value;
-	subsc_params->bit_depth = inst->fw_cap[BIT_DEPTH].value;
-	if (inst->fw_cap[CODED_FRAMES].value ==
+	subsc_params->profile = inst->fw_caps[PROFILE].value;
+	subsc_params->level = inst->fw_caps[LEVEL].value;
+	subsc_params->pic_order_cnt = inst->fw_caps[POC].value;
+	subsc_params->bit_depth = inst->fw_caps[BIT_DEPTH].value;
+	if (inst->fw_caps[CODED_FRAMES].value ==
 			CODED_FRAMES_PROGRESSIVE)
 		subsc_params->coded_frames = HFI_BITMASK_FRAME_MBS_ONLY_FLAG;
 	else

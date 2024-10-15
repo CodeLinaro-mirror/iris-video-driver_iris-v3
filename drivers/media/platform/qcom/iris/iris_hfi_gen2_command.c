@@ -17,7 +17,7 @@
 #define SYS_IFPC_PKT_SIZE (sizeof(struct iris_hfi_header) + \
 	sizeof(struct iris_hfi_packet) + sizeof(u32))
 
-#define SYS_PKT_SIZE (sizeof(struct iris_hfi_header) + \
+#define SYS_NO_PAYLOAD_PKT_SIZE (sizeof(struct iris_hfi_header) + \
 	sizeof(struct iris_hfi_packet))
 
 static int iris_hfi_gen2_sys_init(struct iris_core *core)
@@ -42,7 +42,7 @@ static int iris_hfi_gen2_sys_image_version(struct iris_core *core)
 	struct iris_hfi_header *hdr;
 	int ret;
 
-	hdr = kzalloc(SYS_PKT_SIZE, GFP_KERNEL);
+	hdr = kzalloc(SYS_NO_PAYLOAD_PKT_SIZE, GFP_KERNEL);
 	if (!hdr)
 		return -ENOMEM;
 
@@ -76,7 +76,7 @@ static int iris_hfi_gen2_sys_pc_prep(struct iris_core *core)
 	struct iris_hfi_header *hdr;
 	int ret;
 
-	hdr = kzalloc(SYS_PKT_SIZE, GFP_KERNEL);
+	hdr = kzalloc(SYS_NO_PAYLOAD_PKT_SIZE, GFP_KERNEL);
 	if (!hdr)
 		return -ENOMEM;
 
@@ -201,7 +201,7 @@ static int iris_hfi_gen2_set_coded_frames(struct iris_inst *inst)
 	u32 port = iris_hfi_gen2_get_port(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
 	u32 coded_frames = 0;
 
-	if (inst->fw_cap[CODED_FRAMES].value == CODED_FRAMES_PROGRESSIVE)
+	if (inst->fw_caps[CODED_FRAMES].value == CODED_FRAMES_PROGRESSIVE)
 		coded_frames = HFI_BITMASK_FRAME_MBS_ONLY_FLAG;
 	inst_hfi_gen2->src_subcr_params.coded_frames = coded_frames;
 
@@ -295,7 +295,7 @@ static int iris_hfi_gen2_set_profile(struct iris_inst *inst)
 {
 	struct iris_inst_hfi_gen2 *inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
 	u32 port = iris_hfi_gen2_get_port(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
-	u32 profile = inst->fw_cap[PROFILE].value;
+	u32 profile = inst->fw_caps[PROFILE].value;
 
 	inst_hfi_gen2->src_subcr_params.profile = profile;
 
@@ -312,7 +312,7 @@ static int iris_hfi_gen2_set_level(struct iris_inst *inst)
 {
 	struct iris_inst_hfi_gen2 *inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
 	u32 port = iris_hfi_gen2_get_port(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
-	u32 level = inst->fw_cap[LEVEL].value;
+	u32 level = inst->fw_caps[LEVEL].value;
 
 	inst_hfi_gen2->src_subcr_params.level = level;
 
@@ -433,7 +433,7 @@ static int iris_hfi_gen2_session_set_codec(struct iris_inst *inst)
 static int iris_hfi_gen2_session_set_default_header(struct iris_inst *inst)
 {
 	struct iris_inst_hfi_gen2 *inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
-	u32 default_header = inst->fw_cap[DEFAULT_HEADER].value;
+	u32 default_header = false;
 
 	iris_hfi_gen2_packet_session_property(inst,
 					      HFI_PROP_DEC_DEFAULT_HEADER,
@@ -841,12 +841,12 @@ static u32 iris_hfi_gen2_buf_type_from_driver(enum iris_buffer_type buffer_type)
 
 static int iris_set_num_comv(struct iris_inst *inst)
 {
-	struct platform_inst_caps *platform_caps;
+	struct platform_inst_caps *caps;
 	struct iris_core *core = inst->core;
 	u32 num_comv;
 
-	platform_caps = core->iris_platform_data->inst_driver_caps;
-	num_comv = platform_caps->num_comv;
+	caps = core->iris_platform_data->inst_caps;
+	num_comv = caps->num_comv;
 
 	return core->hfi_ops->session_set_property(inst,
 						   HFI_PROP_COMV_BUFFER_COUNT,
