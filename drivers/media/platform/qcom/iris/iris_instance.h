@@ -12,6 +12,9 @@
 #include "iris_core.h"
 #include "iris_utils.h"
 
+#define DEFAULT_WIDTH 320
+#define DEFAULT_HEIGHT 240
+
 /**
  * struct iris_inst - holds per video instance parameters
  *
@@ -24,7 +27,9 @@
  * @fmt_src: structure of v4l2_format for source
  * @fmt_dst: structure of v4l2_format for destination
  * @ctrl_handler: reference of v4l2 ctrl handler
+ * @domain: domain type: encoder or decoder
  * @crop: structure of crop info
+ * @compose: structure of compose info
  * @completions: structure of signal completions
  * @flush_completions: structure of signal completions for flush cmd
  * @fw_caps: array of supported instance firmware capabilities
@@ -55,7 +60,9 @@ struct iris_inst {
 	struct v4l2_format		*fmt_src;
 	struct v4l2_format		*fmt_dst;
 	struct v4l2_ctrl_handler	ctrl_handler;
+	enum domain_type		domain;
 	struct iris_hfi_rect_desc	crop;
+	struct iris_hfi_rect_desc	compose;
 	struct completion		completion;
 	struct completion		flush_completion;
 	struct platform_inst_fw_cap	fw_caps[INST_FW_CAP_MAX];

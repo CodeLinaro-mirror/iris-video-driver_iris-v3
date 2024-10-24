@@ -19,6 +19,7 @@ iris-objs += iris_buffer.o \
              iris_vidc.o \
              iris_vb2.o \
              iris_vdec.o \
+             iris_venc.o \
              iris_vpu2.o \
              iris_vpu3.o \
              iris_vpu_buffer.o \
