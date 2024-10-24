@@ -274,7 +274,12 @@ static int iris_enum_fmt(struct file *filp, void *fh, struct v4l2_fmtdesc *f)
 	if (f->index)
 		return -EINVAL;
 
-	return iris_vdec_enum_fmt(inst, f);
+	if (inst->domain == DECODER)
+		return iris_vdec_enum_fmt(inst, f);
+	else if (inst->domain == ENCODER)
+		return iris_venc_enum_fmt(inst, f);
+	else
+		return -EINVAL;
 }
 
 static int iris_try_fmt_vid_mplane(struct file *filp, void *fh, struct v4l2_format *f)
@@ -341,6 +346,49 @@ static int iris_enum_framesizes(struct file *filp, void *fh,
 	fsize->stepwise.min_height = caps->min_frame_height;
 	fsize->stepwise.max_height = caps->max_frame_height;
 	fsize->stepwise.step_height = STEP_HEIGHT;
+
+	return 0;
+}
+
+static int iris_enum_frameintervals(struct file *filp, void *fh,
+				    struct v4l2_frmivalenum *fival)
+
+{
+	struct iris_inst *inst = iris_get_inst(filp, NULL);
+	struct platform_inst_caps *caps;
+	struct iris_core *core = inst->core;
+	u32 fps, mbpf;
+
+	if (inst->domain == DECODER)
+		return -ENOTTY;
+
+	if (fival->index)
+		return -EINVAL;
+
+	if (fival->pixel_format != V4L2_PIX_FMT_NV12)
+		return -EINVAL;
+
+	if (!fival->width || !fival->height)
+		return -EINVAL;
+
+	caps = inst->core->iris_platform_data->inst_caps;
+	if (fival->width > caps->max_frame_width ||
+	    fival->width < caps->min_frame_width ||
+	    fival->height > caps->max_frame_height ||
+	    fival->height < caps->min_frame_height)
+		return -EINVAL;
+
+	mbpf = NUM_MBS_PER_FRAME(fival->height, fival->width);
+	fps = core->iris_platform_data->max_core_mbps / mbpf;
+
+	fival->type = V4L2_FRMIVAL_TYPE_STEPWISE;
+	fival->stepwise.min.numerator = 1;
+	fival->stepwise.min.denominator =
+			min_t(u32, fps, MAXIMUM_FPS);
+	fival->stepwise.max.numerator = 1;
+	fival->stepwise.max.denominator = 1;
+	fival->stepwise.step.numerator = 1;
+	fival->stepwise.step.denominator = MAXIMUM_FPS;
 
 	return 0;
 }
@@ -441,7 +489,7 @@ static const struct vb2_ops iris_vb2_ops = {
 	.buf_queue                      = iris_vb2_buf_queue,
 };
 
-static const struct v4l2_ioctl_ops iris_v4l2_ioctl_ops = {
+static const struct v4l2_ioctl_ops iris_v4l2_ioctl_ops_dec = {
 	.vidioc_enum_fmt_vid_cap        = iris_enum_fmt,
 	.vidioc_enum_fmt_vid_out        = iris_enum_fmt,
 	.vidioc_try_fmt_vid_cap_mplane  = iris_try_fmt_vid_mplane,
@@ -469,9 +517,18 @@ static const struct v4l2_ioctl_ops iris_v4l2_ioctl_ops = {
 	.vidioc_decoder_cmd             = iris_dec_cmd,
 };
 
+static const struct v4l2_ioctl_ops iris_v4l2_ioctl_ops_enc = {
+	.vidioc_enum_fmt_vid_cap        = iris_enum_fmt,
+	.vidioc_enum_fmt_vid_out        = iris_enum_fmt,
+	.vidioc_enum_framesizes         = iris_enum_framesizes,
+	.vidioc_enum_frameintervals     = iris_enum_frameintervals,
+};
+
+
 void iris_init_ops(struct iris_core *core)
 {
 	core->iris_v4l2_file_ops = &iris_v4l2_file_ops;
 	core->iris_vb2_ops = &iris_vb2_ops;
-	core->iris_v4l2_ioctl_ops = &iris_v4l2_ioctl_ops;
+	core->iris_v4l2_ioctl_ops_dec = &iris_v4l2_ioctl_ops_dec;
+	core->iris_v4l2_ioctl_ops_enc = &iris_v4l2_ioctl_ops_enc;
 }
