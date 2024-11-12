@@ -254,7 +254,10 @@ int iris_vpu_buf_count(struct iris_inst *inst, enum iris_buffer_type buffer_type
 	case BUF_INPUT:
 		return MIN_BUFFERS;
 	case BUF_OUTPUT:
-		return inst->fw_min_count;
+		if (inst->domain == ENCODER)
+			return MIN_BUFFERS;
+		else
+			return inst->fw_min_count;
 	case BUF_BIN:
 	case BUF_COMV:
 	case BUF_NON_COMV:

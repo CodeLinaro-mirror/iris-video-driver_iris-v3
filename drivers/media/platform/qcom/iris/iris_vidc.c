@@ -285,10 +285,15 @@ static int iris_enum_fmt(struct file *filp, void *fh, struct v4l2_fmtdesc *f)
 static int iris_try_fmt_vid_mplane(struct file *filp, void *fh, struct v4l2_format *f)
 {
 	struct iris_inst *inst = iris_get_inst(filp, NULL);
-	int ret;
+	int ret = 0;
 
 	mutex_lock(&inst->lock);
-	ret = iris_vdec_try_fmt(inst, f);
+
+	if (inst->domain == DECODER)
+		ret = iris_vdec_try_fmt(inst, f);
+	else if (inst->domain == ENCODER)
+		ret = iris_venc_try_fmt(inst, f);
+
 	mutex_unlock(&inst->lock);
 
 	return ret;
@@ -297,10 +302,15 @@ static int iris_try_fmt_vid_mplane(struct file *filp, void *fh, struct v4l2_form
 static int iris_s_fmt_vid_mplane(struct file *filp, void *fh, struct v4l2_format *f)
 {
 	struct iris_inst *inst = iris_get_inst(filp, NULL);
-	int ret;
+	int ret = 0;
 
 	mutex_lock(&inst->lock);
-	ret = iris_vdec_s_fmt(inst, f);
+
+	if (inst->domain == DECODER)
+		ret = iris_vdec_s_fmt(inst, f);
+	else if (inst->domain == ENCODER)
+		ret = iris_venc_s_fmt(inst, f);
+
 	mutex_unlock(&inst->lock);
 
 	return ret;
@@ -520,10 +530,15 @@ static const struct v4l2_ioctl_ops iris_v4l2_ioctl_ops_dec = {
 static const struct v4l2_ioctl_ops iris_v4l2_ioctl_ops_enc = {
 	.vidioc_enum_fmt_vid_cap        = iris_enum_fmt,
 	.vidioc_enum_fmt_vid_out        = iris_enum_fmt,
+	.vidioc_try_fmt_vid_cap_mplane  = iris_try_fmt_vid_mplane,
+	.vidioc_try_fmt_vid_out_mplane  = iris_try_fmt_vid_mplane,
+	.vidioc_s_fmt_vid_cap_mplane    = iris_s_fmt_vid_mplane,
+	.vidioc_s_fmt_vid_out_mplane    = iris_s_fmt_vid_mplane,
+	.vidioc_g_fmt_vid_cap_mplane    = iris_g_fmt_vid_mplane,
+	.vidioc_g_fmt_vid_out_mplane    = iris_g_fmt_vid_mplane,
 	.vidioc_enum_framesizes         = iris_enum_framesizes,
 	.vidioc_enum_frameintervals     = iris_enum_frameintervals,
 };
-
 
 void iris_init_ops(struct iris_core *core)
 {
