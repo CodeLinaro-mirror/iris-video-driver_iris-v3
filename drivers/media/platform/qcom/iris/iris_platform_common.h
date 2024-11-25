@@ -22,6 +22,10 @@ struct iris_inst;
 #define DEFAULT_MAX_HOST_BURST_BUF_COUNT	256
 #define DEFAULT_FPS				30
 #define MAXIMUM_FPS				480
+#define MIN_QP_8BIT				1
+#define MAX_QP					51
+#define MAX_QP_HEVC				63
+#define DEFAULT_QP				20
 
 enum stage_type {
 	STAGE_1 = 1,
@@ -81,8 +85,10 @@ struct platform_inst_caps {
 };
 
 enum platform_inst_fw_cap_type {
-	PROFILE = 1,
-	LEVEL,
+	PROFILE_H264 = 1,
+	PROFILE_HEVC,
+	LEVEL_H264,
+	LEVEL_HEVC,
 	INPUT_BUF_HOST_MAX_COUNT,
 	STAGE,
 	PIPE,
@@ -91,6 +97,39 @@ enum platform_inst_fw_cap_type {
 	BIT_DEPTH,
 	RAP_FRAME,
 	DEBLOCK,
+	HEADER_MODE,
+	PREPEND_SPSPPS_TO_IDR,
+	BITRATE,
+	BITRATE_PEAK,
+	BITRATE_MODE,
+	FRAME_SKIP_MODE,
+	FRAME_RC_ENABLE,
+	GOP_SIZE,
+	B_FRAME,
+	ENTROPY_MODE,
+	TRANSFORM_8X8,
+	MIN_FRAME_QP_H264,
+	MIN_FRAME_QP_HEVC,
+	MAX_FRAME_QP_H264,
+	MAX_FRAME_QP_HEVC,
+	I_FRAME_MIN_QP_H264,
+	I_FRAME_MIN_QP_HEVC,
+	P_FRAME_MIN_QP_H264,
+	P_FRAME_MIN_QP_HEVC,
+	B_FRAME_MIN_QP_H264,
+	B_FRAME_MIN_QP_HEVC,
+	I_FRAME_MAX_QP_H264,
+	I_FRAME_MAX_QP_HEVC,
+	P_FRAME_MAX_QP_H264,
+	P_FRAME_MAX_QP_HEVC,
+	B_FRAME_MAX_QP_H264,
+	B_FRAME_MAX_QP_HEVC,
+	I_FRAME_QP_H264,
+	I_FRAME_QP_HEVC,
+	P_FRAME_QP_H264,
+	P_FRAME_QP_HEVC,
+	B_FRAME_QP_H264,
+	B_FRAME_QP_HEVC,
 	INST_FW_CAP_MAX,
 };
 
@@ -163,8 +202,10 @@ struct iris_platform_data {
 	const char *fwname;
 	u32 pas_id;
 	struct platform_inst_caps *inst_caps;
-	struct platform_inst_fw_cap *inst_fw_caps;
-	u32 inst_fw_caps_size;
+	struct platform_inst_fw_cap *inst_fw_caps_dec;
+	u32 inst_fw_caps_dec_size;
+	struct platform_inst_fw_cap *inst_fw_caps_enc;
+	u32 inst_fw_caps_enc_size;
 	struct tz_cp_config *tz_cp_config_data;
 	u32 core_arch;
 	u32 hw_response_timeout;
