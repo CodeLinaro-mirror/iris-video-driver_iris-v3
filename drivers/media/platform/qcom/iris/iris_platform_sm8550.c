@@ -549,9 +549,22 @@ static const u32 sm8550_vdec_input_config_params[] = {
 	HFI_PROP_SIGNAL_COLOR_INFO,
 };
 
+static const u32 sm8550_venc_input_config_params[] = {
+	HFI_PROP_COLOR_FORMAT,
+	HFI_PROP_RAW_RESOLUTION,
+	HFI_PROP_CROP_OFFSETS,
+	HFI_PROP_LINEAR_STRIDE_SCANLINE,
+	HFI_PROP_SIGNAL_COLOR_INFO,
+};
+
 static const u32 sm8550_vdec_output_config_params[] = {
 	HFI_PROP_COLOR_FORMAT,
 	HFI_PROP_LINEAR_STRIDE_SCANLINE,
+};
+
+static const u32 sm8550_venc_output_config_params[] = {
+	HFI_PROP_BITSTREAM_RESOLUTION,
+	HFI_PROP_CROP_OFFSETS,
 };
 
 static const u32 sm8550_vdec_subscribe_input_properties[] = {
@@ -561,6 +574,15 @@ static const u32 sm8550_vdec_subscribe_input_properties[] = {
 static const u32 sm8550_vdec_subscribe_output_properties[] = {
 	HFI_PROP_PICTURE_TYPE,
 	HFI_PROP_CABAC_SESSION,
+};
+
+static const u32 sm8550_venc_subscribe_input_properties[] = {
+	HFI_PROP_NO_OUTPUT,
+};
+
+static const u32 sm8550_venc_subscribe_output_properties[] = {
+	HFI_PROP_PICTURE_TYPE,
+	HFI_PROP_BUFFER_MARK,
 };
 
 static const u32 sm8550_dec_ip_int_buf_tbl[] = {
@@ -608,18 +630,30 @@ struct iris_platform_data sm8550_data = {
 	.max_session_count = 16,
 	.max_core_mbpf = ((8192 * 4352) / 256) * 2,
 	.max_core_mbps = ((7680 * 4320) /256) * 60,
-	.input_config_params =
+	.input_config_params_dec =
 		sm8550_vdec_input_config_params,
-	.input_config_params_size =
+	.input_config_params_dec_size =
 		ARRAY_SIZE(sm8550_vdec_input_config_params),
-	.output_config_params =
+	.output_config_params_dec =
 		sm8550_vdec_output_config_params,
-	.output_config_params_size =
+	.output_config_params_dec_size =
 		ARRAY_SIZE(sm8550_vdec_output_config_params),
+	.input_config_params_enc =
+		sm8550_venc_input_config_params,
+	.input_config_params_dec_size =
+		ARRAY_SIZE(sm8550_venc_input_config_params),
+	.output_config_params_enc =
+		sm8550_venc_output_config_params,
+	.output_config_params_enc_size =
+		ARRAY_SIZE(sm8550_venc_output_config_params),
 	.dec_input_prop = sm8550_vdec_subscribe_input_properties,
 	.dec_input_prop_size = ARRAY_SIZE(sm8550_vdec_subscribe_input_properties),
 	.dec_output_prop = sm8550_vdec_subscribe_output_properties,
 	.dec_output_prop_size = ARRAY_SIZE(sm8550_vdec_subscribe_output_properties),
+	.enc_input_prop = sm8550_venc_subscribe_input_properties,
+	.enc_input_prop_size = ARRAY_SIZE(sm8550_venc_subscribe_input_properties),
+	.enc_output_prop = sm8550_venc_subscribe_output_properties,
+	.enc_output_prop_size = ARRAY_SIZE(sm8550_venc_subscribe_output_properties),
 
 	.dec_ip_int_buf_tbl = sm8550_dec_ip_int_buf_tbl,
 	.dec_ip_int_buf_tbl_size = ARRAY_SIZE(sm8550_dec_ip_int_buf_tbl),

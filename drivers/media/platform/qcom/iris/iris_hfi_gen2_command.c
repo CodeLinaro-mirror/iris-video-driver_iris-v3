@@ -136,12 +136,34 @@ static int iris_hfi_gen2_session_set_property(struct iris_inst *inst, u32 packet
 					inst_hfi_gen2->packet->size);
 }
 
-static int iris_hfi_gen2_set_bitstream_resolution(struct iris_inst *inst)
+static int iris_hfi_gen2_set_raw_resolution(struct iris_inst *inst, u32 plane)
 {
-	struct iris_inst_hfi_gen2 *inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
-	u32 port = iris_hfi_gen2_get_port(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
 	u32 resolution = inst->fmt_src->fmt.pix_mp.width << 16 |
 		inst->fmt_src->fmt.pix_mp.height;
+	u32 port = iris_hfi_gen2_get_port(plane);
+
+	return iris_hfi_gen2_session_set_property(inst,
+						  HFI_PROP_RAW_RESOLUTION,
+						  HFI_HOST_FLAGS_NONE,
+						  port,
+						  HFI_PAYLOAD_32_PACKED,
+						  &resolution,
+						  sizeof(u32));
+}
+
+static int iris_hfi_gen2_set_bitstream_resolution(struct iris_inst *inst, u32 plane)
+{
+	struct iris_inst_hfi_gen2 *inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
+	u32 port = iris_hfi_gen2_get_port(plane);
+	u32 resolution;
+
+	if (inst->domain == DECODER) {
+		resolution = inst->fmt_src->fmt.pix_mp.width << 16 |
+			inst->fmt_src->fmt.pix_mp.height;
+	} else {
+		resolution = inst->fmt_dst->fmt.pix_mp.width << 16 |
+			inst->fmt_dst->fmt.pix_mp.height;
+	}
 
 	inst_hfi_gen2->src_subcr_params.bitstream_resolution = resolution;
 
@@ -154,15 +176,25 @@ static int iris_hfi_gen2_set_bitstream_resolution(struct iris_inst *inst)
 						  sizeof(u32));
 }
 
-static int iris_hfi_gen2_set_crop_offsets(struct iris_inst *inst)
+static int iris_hfi_gen2_set_crop_offsets(struct iris_inst *inst, u32 plane)
 {
-	u32 bottom_offset = (inst->fmt_src->fmt.pix_mp.height - inst->crop.height);
-	u32 right_offset = (inst->fmt_src->fmt.pix_mp.width - inst->crop.width);
 	struct iris_inst_hfi_gen2 *inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
-	u32 port = iris_hfi_gen2_get_port(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
-	u32 left_offset = inst->crop.left;
-	u32 top_offset = inst->crop.top;
+	u32 port = iris_hfi_gen2_get_port(plane);
+	u32 bottom_offset, right_offset;
+	u32 left_offset, top_offset;
 	u32 payload[2];
+
+	if (V4L2_TYPE_IS_OUTPUT(plane)) {
+		bottom_offset = (inst->fmt_src->fmt.pix_mp.height - inst->crop.height);
+		right_offset = (inst->fmt_src->fmt.pix_mp.width - inst->crop.width);
+		left_offset = inst->crop.left;
+		top_offset = inst->crop.top;
+	} else {
+		bottom_offset = (inst->fmt_src->fmt.pix_mp.height - inst->compose.height);
+		right_offset = (inst->fmt_src->fmt.pix_mp.width - inst->compose.width);
+		left_offset = inst->compose.left;
+		top_offset = inst->compose.top;
+	}
 
 	payload[0] = FIELD_PREP(GENMASK(31, 16), left_offset) | top_offset;
 	payload[1] = FIELD_PREP(GENMASK(31, 16), right_offset) | bottom_offset;
@@ -178,10 +210,10 @@ static int iris_hfi_gen2_set_crop_offsets(struct iris_inst *inst)
 						  sizeof(u64));
 }
 
-static int iris_hfi_gen2_set_bit_dpeth(struct iris_inst *inst)
+static int iris_hfi_gen2_set_bit_dpeth(struct iris_inst *inst, u32 plane)
 {
 	struct iris_inst_hfi_gen2 *inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
-	u32 port = iris_hfi_gen2_get_port(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
+	u32 port = iris_hfi_gen2_get_port(plane);
 	u32 bitdepth = BIT_DEPTH_8;
 
 	inst_hfi_gen2->src_subcr_params.bit_depth = bitdepth;
@@ -195,10 +227,10 @@ static int iris_hfi_gen2_set_bit_dpeth(struct iris_inst *inst)
 						  sizeof(u32));
 }
 
-static int iris_hfi_gen2_set_coded_frames(struct iris_inst *inst)
+static int iris_hfi_gen2_set_coded_frames(struct iris_inst *inst, u32 plane)
 {
 	struct iris_inst_hfi_gen2 *inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
-	u32 port = iris_hfi_gen2_get_port(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
+	u32 port = iris_hfi_gen2_get_port(plane);
 	u32 coded_frames = 0;
 
 	if (inst->fw_caps[CODED_FRAMES].value == CODED_FRAMES_PROGRESSIVE)
@@ -214,11 +246,11 @@ static int iris_hfi_gen2_set_coded_frames(struct iris_inst *inst)
 						  sizeof(u32));
 }
 
-static int iris_hfi_gen2_set_min_output_count(struct iris_inst *inst)
+static int iris_hfi_gen2_set_min_output_count(struct iris_inst *inst, u32 plane)
 {
 	struct iris_inst_hfi_gen2 *inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
-	u32 port = iris_hfi_gen2_get_port(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
 	u32 min_output = inst->buffers[BUF_OUTPUT].min_count;
+	u32 port = iris_hfi_gen2_get_port(plane);
 
 	inst_hfi_gen2->src_subcr_params.fw_min_count = min_output;
 
@@ -231,10 +263,10 @@ static int iris_hfi_gen2_set_min_output_count(struct iris_inst *inst)
 						  sizeof(u32));
 }
 
-static int iris_hfi_gen2_set_picture_order_count(struct iris_inst *inst)
+static int iris_hfi_gen2_set_picture_order_count(struct iris_inst *inst, u32 plane)
 {
 	struct iris_inst_hfi_gen2 *inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
-	u32 port = iris_hfi_gen2_get_port(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
+	u32 port = iris_hfi_gen2_get_port(plane);
 	u32 poc = 0;
 
 	inst_hfi_gen2->src_subcr_params.pic_order_cnt = poc;
@@ -248,16 +280,16 @@ static int iris_hfi_gen2_set_picture_order_count(struct iris_inst *inst)
 						  sizeof(u32));
 }
 
-static int iris_hfi_gen2_set_colorspace(struct iris_inst *inst)
+static int iris_hfi_gen2_set_colorspace(struct iris_inst *inst, u32 plane)
 {
 	struct iris_inst_hfi_gen2 *inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
-	u32 port = iris_hfi_gen2_get_port(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
 	struct v4l2_pix_format_mplane *pixmp = &inst->fmt_src->fmt.pix_mp;
 	u32 video_signal_type_present_flag = 0, color_info;
 	u32 matrix_coeff = HFI_MATRIX_COEFF_RESERVED;
 	u32 video_format = UNSPECIFIED_COLOR_FORMAT;
 	u32 full_range = V4L2_QUANTIZATION_DEFAULT;
 	u32 transfer_char = HFI_TRANSFER_RESERVED;
+	u32 port = iris_hfi_gen2_get_port(plane);
 	u32 colour_description_present_flag = 0;
 	u32 primaries = HFI_PRIMARIES_RESERVED;
 
@@ -291,11 +323,11 @@ static int iris_hfi_gen2_set_colorspace(struct iris_inst *inst)
 						  sizeof(u32));
 }
 
-static int iris_hfi_gen2_set_profile(struct iris_inst *inst)
+static int iris_hfi_gen2_set_profile(struct iris_inst *inst, u32 plane)
 {
 	struct iris_inst_hfi_gen2 *inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
-	u32 port = iris_hfi_gen2_get_port(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
 	u32 profile = inst->fw_caps[PROFILE_H264].value;
+	u32 port = iris_hfi_gen2_get_port(plane);
 
 	inst_hfi_gen2->src_subcr_params.profile = profile;
 
@@ -308,11 +340,11 @@ static int iris_hfi_gen2_set_profile(struct iris_inst *inst)
 						  sizeof(u32));
 }
 
-static int iris_hfi_gen2_set_level(struct iris_inst *inst)
+static int iris_hfi_gen2_set_level(struct iris_inst *inst, u32 plane)
 {
 	struct iris_inst_hfi_gen2 *inst_hfi_gen2 = to_iris_inst_hfi_gen2(inst);
-	u32 port = iris_hfi_gen2_get_port(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE);
 	u32 level = inst->fw_caps[LEVEL_H264].value;
+	u32 port = iris_hfi_gen2_get_port(plane);
 
 	inst_hfi_gen2->src_subcr_params.level = level;
 
@@ -325,13 +357,18 @@ static int iris_hfi_gen2_set_level(struct iris_inst *inst)
 						  sizeof(u32));
 }
 
-static int iris_hfi_gen2_set_colorformat(struct iris_inst *inst)
+static int iris_hfi_gen2_set_colorformat(struct iris_inst *inst, u32 plane)
 {
-	u32 port = iris_hfi_gen2_get_port(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE);
+	u32 port = iris_hfi_gen2_get_port(plane);
 	u32 hfi_colorformat, pixelformat;
 
-	pixelformat = inst->fmt_dst->fmt.pix_mp.pixelformat;
-	hfi_colorformat = pixelformat == V4L2_PIX_FMT_NV12 ? HFI_COLOR_FMT_NV12 : 0;
+	if (inst->domain == DECODER) {
+		pixelformat = inst->fmt_dst->fmt.pix_mp.pixelformat;
+		hfi_colorformat = pixelformat == V4L2_PIX_FMT_NV12 ? HFI_COLOR_FMT_NV12 : 0;
+	} else {
+		pixelformat = inst->fmt_src->fmt.pix_mp.pixelformat;
+		hfi_colorformat = pixelformat == V4L2_PIX_FMT_NV12 ? HFI_COLOR_FMT_NV12 : 0;
+	}
 
 	return iris_hfi_gen2_session_set_property(inst,
 						  HFI_PROP_COLOR_FORMAT,
@@ -342,15 +379,24 @@ static int iris_hfi_gen2_set_colorformat(struct iris_inst *inst)
 						  sizeof(u32));
 }
 
-static int iris_hfi_gen2_set_linear_stride_scanline(struct iris_inst *inst)
+static int iris_hfi_gen2_set_linear_stride_scanline(struct iris_inst *inst, u32 plane)
 {
-	u32 port = iris_hfi_gen2_get_port(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE);
-	u32 pixelformat = inst->fmt_dst->fmt.pix_mp.pixelformat;
-	u32 scanline_y = inst->fmt_dst->fmt.pix_mp.height;
-	u32 stride_y = inst->fmt_dst->fmt.pix_mp.width;
-	u32 scanline_uv = scanline_y / 2;
-	u32 stride_uv = stride_y;
+	u32 pixelformat, stride_y, stride_uv, scanline_y, scanline_uv;
+	u32 port = iris_hfi_gen2_get_port(plane);
 	u32 payload[2];
+
+	if (inst->domain == DECODER) {
+		pixelformat = inst->fmt_dst->fmt.pix_mp.pixelformat;
+		stride_y = inst->fmt_dst->fmt.pix_mp.width;
+		scanline_y = inst->fmt_dst->fmt.pix_mp.height;
+	} else {
+		pixelformat = inst->fmt_src->fmt.pix_mp.pixelformat;
+		stride_y = ALIGN(inst->fmt_src->fmt.pix_mp.width, 128);
+		scanline_y = ALIGN(inst->fmt_src->fmt.pix_mp.height, 32);
+	}
+
+	stride_uv = stride_y;
+	scanline_uv = scanline_y / 2;
 
 	if (pixelformat != V4L2_PIX_FMT_NV12)
 		return 0;
@@ -375,6 +421,7 @@ static int iris_hfi_gen2_session_set_config_params(struct iris_inst *inst, u32 p
 	int ret;
 
 	static const struct iris_hfi_prop_type_handle prop_type_handle_arr[] = {
+		{HFI_PROP_RAW_RESOLUTION,             iris_hfi_gen2_set_raw_resolution         },
 		{HFI_PROP_BITSTREAM_RESOLUTION,       iris_hfi_gen2_set_bitstream_resolution   },
 		{HFI_PROP_CROP_OFFSETS,               iris_hfi_gen2_set_crop_offsets           },
 		{HFI_PROP_CODED_FRAMES,               iris_hfi_gen2_set_coded_frames           },
@@ -388,12 +435,22 @@ static int iris_hfi_gen2_session_set_config_params(struct iris_inst *inst, u32 p
 		{HFI_PROP_LINEAR_STRIDE_SCANLINE,     iris_hfi_gen2_set_linear_stride_scanline },
 	};
 
-	if (V4L2_TYPE_IS_OUTPUT(plane)) {
-		config_params = core->iris_platform_data->input_config_params;
-		config_params_size = core->iris_platform_data->input_config_params_size;
+	if (inst->domain == DECODER) {
+		if (V4L2_TYPE_IS_OUTPUT(plane)) {
+			config_params = core->iris_platform_data->input_config_params_dec;
+			config_params_size = core->iris_platform_data->input_config_params_dec_size;
+		} else {
+			config_params = core->iris_platform_data->output_config_params_dec;
+			config_params_size = core->iris_platform_data->output_config_params_dec_size;
+		}
 	} else {
-		config_params = core->iris_platform_data->output_config_params;
-		config_params_size = core->iris_platform_data->output_config_params_size;
+		if (V4L2_TYPE_IS_OUTPUT(plane)) {
+			config_params = core->iris_platform_data->input_config_params_enc;
+			config_params_size = core->iris_platform_data->input_config_params_enc_size;
+		} else {
+			config_params = core->iris_platform_data->output_config_params_enc;
+			config_params_size = core->iris_platform_data->output_config_params_enc_size;
+		}
 	}
 
 	if (!config_params || !config_params_size)
@@ -402,7 +459,7 @@ static int iris_hfi_gen2_session_set_config_params(struct iris_inst *inst, u32 p
 	for (i = 0; i < config_params_size; i++) {
 		for (j = 0; j < ARRAY_SIZE(prop_type_handle_arr); j++) {
 			if (prop_type_handle_arr[j].type == config_params[i]) {
-				ret = prop_type_handle_arr[j].handle(inst);
+				ret = prop_type_handle_arr[j].handle(inst, plane);
 				if (ret)
 					return ret;
 				break;
@@ -554,14 +611,17 @@ static int iris_hfi_gen2_subscribe_change_param(struct iris_inst *inst, u32 plan
 	u32 hfi_port = 0, i;
 	int ret;
 
+	if (inst->domain == ENCODER)
+		return 0;
+
 	if ((V4L2_TYPE_IS_OUTPUT(plane) && inst_hfi_gen2->ipsc_properties_set) ||
 	    (V4L2_TYPE_IS_CAPTURE(plane) && inst_hfi_gen2->opsc_properties_set)) {
 		dev_err(core->dev, "invalid plane\n");
 		return 0;
 	}
 
-	change_param = core->iris_platform_data->input_config_params;
-	change_param_size = core->iris_platform_data->input_config_params_size;
+	change_param = core->iris_platform_data->input_config_params_dec;
+	change_param_size = core->iris_platform_data->input_config_params_dec_size;
 
 	payload[0] = HFI_MODE_PORT_SETTINGS_CHANGE;
 
@@ -665,14 +725,23 @@ static int iris_hfi_gen2_subscribe_property(struct iris_inst *inst, u32 plane)
 
 	payload[0] = HFI_MODE_PROPERTY;
 
-	if (V4L2_TYPE_IS_OUTPUT(plane)) {
-		subscribe_prop_size = core->iris_platform_data->dec_input_prop_size;
-		subcribe_prop = core->iris_platform_data->dec_input_prop;
+	if (inst->domain == DECODER) {
+		if (V4L2_TYPE_IS_OUTPUT(plane)) {
+			subscribe_prop_size = core->iris_platform_data->dec_input_prop_size;
+			subcribe_prop = core->iris_platform_data->dec_input_prop;
+		} else {
+			subscribe_prop_size = core->iris_platform_data->dec_output_prop_size;
+			subcribe_prop = core->iris_platform_data->dec_output_prop;
+		}
 	} else {
-		subscribe_prop_size = core->iris_platform_data->dec_output_prop_size;
-		subcribe_prop = core->iris_platform_data->dec_output_prop;
+		if (V4L2_TYPE_IS_OUTPUT(plane)) {
+			subscribe_prop_size = core->iris_platform_data->enc_input_prop_size;
+			subcribe_prop = core->iris_platform_data->enc_input_prop;
+		} else {
+			subscribe_prop_size = core->iris_platform_data->enc_output_prop_size;
+			subcribe_prop = core->iris_platform_data->enc_output_prop;
+		}
 	}
-
 	for (i = 0; i < subscribe_prop_size; i++)
 		payload[i + 1] = subcribe_prop[i];
 
