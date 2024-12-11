@@ -225,8 +225,23 @@ int iris_vpu_buf_size(struct iris_inst *inst, enum iris_buffer_type buffer_type)
 		{BUF_SCRATCH_1,   iris_vpu_dec_scratch1_size        },
 	};
 
-	buf_type_handle_size = ARRAY_SIZE(dec_internal_buf_type_handle);
-	buf_type_handle_arr = dec_internal_buf_type_handle;
+	static const struct iris_vpu_buf_type_handle enc_internal_buf_type_handle[] = {
+		{BUF_BIN,         NULL             },
+		{BUF_COMV,        NULL            },
+		{BUF_NON_COMV,    NULL        },
+		{BUF_LINE,        NULL            },
+		{BUF_DPB,         NULL             },
+		{BUF_ARP,         NULL             },
+		{BUF_VPSS,        NULL            },
+	};
+
+	if (inst->domain == DECODER) {
+		buf_type_handle_size = ARRAY_SIZE(dec_internal_buf_type_handle);
+		buf_type_handle_arr = dec_internal_buf_type_handle;
+	} else if (inst->domain == ENCODER) {
+		buf_type_handle_size = ARRAY_SIZE(enc_internal_buf_type_handle);
+		buf_type_handle_arr = enc_internal_buf_type_handle;
+	}
 
 	for (i = 0; i < buf_type_handle_size; i++) {
 		if (buf_type_handle_arr[i].type == buffer_type) {
@@ -264,6 +279,9 @@ int iris_vpu_buf_count(struct iris_inst *inst, enum iris_buffer_type buffer_type
 	case BUF_LINE:
 	case BUF_PERSIST:
 	case BUF_SCRATCH_1:
+	case BUF_SCRATCH_2:
+	case BUF_VPSS:
+	case BUF_ARP:
 		return 1; /* internal buffer count needed by firmware is 1 */
 	case BUF_DPB:
 		return iris_vpu_dpb_count(inst);
