@@ -50,6 +50,7 @@
  * @metadata_idx: index for metadata buffer
  * @frame_rate: frame rate of current instance
  * @operating_rate: operating rate of current instance
+ * @hfi_rc_type: rate control type
  */
 
 struct iris_inst {
@@ -85,6 +86,8 @@ struct iris_inst {
 	u32				metadata_idx;
 	u32				frame_rate;
 	u32				operating_rate;
+	u32 codec;
+	u32				hfi_rc_type;
 };
 
 #endif

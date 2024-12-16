@@ -156,7 +156,7 @@ static int iris_venc_s_fmt_output(struct iris_inst *inst, struct v4l2_format *f)
 
 	inst->buffers[BUF_OUTPUT].min_count = iris_vpu_buf_count(inst, BUF_OUTPUT);
 	inst->buffers[BUF_OUTPUT].size = fmt->fmt.pix_mp.plane_fmt[0].sizeimage;
-
+	inst->codec = f->fmt.pix_mp.pixelformat;
 	memcpy(f, fmt, sizeof(struct v4l2_format));
 
 	return 0;

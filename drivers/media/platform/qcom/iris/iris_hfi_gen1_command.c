@@ -498,6 +498,95 @@ iris_hfi_gen1_packet_session_set_property(struct hfi_session_set_property_pkt *p
 		packet->shdr.hdr.size += sizeof(u32) + sizeof(*en);
 		break;
 	}
+	case HFI_PROPERTY_CONFIG_VENC_SYNC_FRAME_SEQUENCE_HEADER: {
+		struct hfi_enable *en = prop_data;
+		u32 *in = pdata;
+
+		en->enable = *in;
+		packet->shdr.hdr.size += sizeof(u32) + sizeof(*en);
+		break;
+	}
+	case HFI_PROPERTY_CONFIG_VENC_TARGET_BITRATE: {
+		struct hfi_bitrate *brate = prop_data;
+		u32 *in = pdata;
+
+		brate->bitrate = *in;
+		brate->layer_id = 0;
+		packet->shdr.hdr.size += sizeof(u32) + sizeof(*brate);
+		break;
+	}
+	case HFI_PROPERTY_CONFIG_VENC_MAX_BITRATE: { //TODO: confirm if supported
+		struct hfi_bitrate *brate = prop_data;
+		u32 *in = pdata;
+
+		brate->bitrate = *in;
+		brate->layer_id = 0;
+		packet->shdr.hdr.size += sizeof(u32) + sizeof(*brate);
+		break;
+	}
+	case HFI_PROPERTY_PARAM_VENC_RATE_CONTROL: {
+		u32 *in = pdata;
+
+		switch (*in) {
+		case HFI_RATE_CONTROL_OFF:
+		case HFI_RATE_CONTROL_CBR_CFR:
+		case HFI_RATE_CONTROL_CBR_VFR:
+		case HFI_RATE_CONTROL_VBR_CFR:
+		case HFI_RATE_CONTROL_VBR_VFR:
+		case HFI_RATE_CONTROL_CQ:
+			break;
+		default:
+			return -EINVAL;
+			break;
+		}
+
+		packet->data[1] = *in;
+		packet->shdr.hdr.size += sizeof(u32) * 2;
+		break;
+	}
+	case HFI_PROPERTY_PARAM_VENC_H264_ENTROPY_CONTROL: {
+		struct hfi_h264_entropy_control *entropy = prop_data;
+		u32 *in = pdata;
+
+		entropy->entropy_mode = *in;
+		if (entropy->entropy_mode == HFI_H264_ENTROPY_CABAC)
+			entropy->cabac_model = HFI_H264_CABAC_MODEL_0;
+		packet->shdr.hdr.size += sizeof(u32) + sizeof(*entropy);
+		break;
+	}
+	case HFI_PROPERTY_PARAM_VENC_H264_TRANSFORM_8X8: {
+		struct hfi_h264_8x8_transform *h264_transform = prop_data;
+		u32 *in = pdata;
+
+		h264_transform->enable_type = *in;
+		packet->shdr.hdr.size += sizeof(u32) + sizeof(*h264_transform);
+		break;
+	}
+	case HFI_PROPERTY_PARAM_VENC_SESSION_QP_RANGE_V2: {
+		struct hfi_quantization_range_v2 *range = prop_data;
+		struct hfi_quantization_range_v2 *in = pdata;
+		u32 min_qp, max_qp;
+
+		min_qp = in->min_qp.qp_packed;
+		max_qp = in->max_qp.qp_packed;
+
+		/* We'll be packing in the qp, so make sure we
+		 * won't be losing data when masking
+		 */
+		if (min_qp > 0xff || max_qp > 0xff)
+			return -ERANGE;
+
+		range->min_qp.layer_id = 0xFF;
+		range->max_qp.layer_id = 0xFF;
+		range->min_qp.qp_packed = (min_qp & 0xFF) | ((min_qp & 0xFF) << 8) |
+			((min_qp & 0xFF) << 16);
+		range->max_qp.qp_packed = (max_qp & 0xFF) | ((max_qp & 0xFF) << 8) |
+			((max_qp & 0xFF) << 16);
+		range->min_qp.enable = 7;
+		range->max_qp.enable = 7;
+		packet->shdr.hdr.size += sizeof(u32) + sizeof(*range);
+		break;
+	}
 	default:
 		return -EINVAL;
 	}
