@@ -376,7 +376,7 @@ int iris_destroy_internal_buffer(struct iris_inst *inst, struct iris_buffer *buf
 	return 0;
 }
 
-int iris_destroy_internal_buffers(struct iris_inst *inst, u32 plane)
+int iris_destroy_internal_buffers(struct iris_inst *inst, u32 plane, bool force)
 {
 	const struct iris_platform_data *platform_data = inst->core->iris_platform_data;
 	struct iris_buffer *buf, *next;
@@ -396,6 +396,14 @@ int iris_destroy_internal_buffers(struct iris_inst *inst, u32 plane)
 	for (i = 0; i < len; i++) {
 		buffers = &inst->buffers[internal_buf_type[i]];
 		list_for_each_entry_safe(buf, next, &buffers->list, list) {
+			/*
+			 * during stream on, skip destroying internal(DPB) buffer
+			 * if firmware did not return it.
+			 * during close, destroy all buffers irrespectively.
+			 */
+			if (!force && buf->attr & BUF_ATTR_QUEUED)
+				continue;
+
 			ret = iris_destroy_internal_buffer(inst, buf);
 			if (ret)
 				return ret;
@@ -444,6 +452,32 @@ static int iris_release_input_internal_buffers(struct iris_inst *inst)
 	}
 
 	return 0;
+}
+
+void iris_get_num_queued_internal_buffers(struct iris_inst *inst, u32 plane)
+{
+	const struct iris_platform_data *platform_data = inst->core->iris_platform_data;
+	struct iris_buffer *buf, *next;
+	struct iris_buffers *buffers;
+	const u32 *internal_buf_type;
+	u32 internal_buffer_count, i;
+	u32 count = 0;
+
+	if (V4L2_TYPE_IS_OUTPUT(plane)) {
+		internal_buf_type = platform_data->dec_ip_int_buf_tbl;
+		internal_buffer_count = platform_data->dec_ip_int_buf_tbl_size;
+	} else {
+		internal_buf_type = platform_data->dec_op_int_buf_tbl;
+		internal_buffer_count = platform_data->dec_op_int_buf_tbl_size;
+	}
+
+	for (i = 0; i < internal_buffer_count; i++) {
+		buffers = &inst->buffers[internal_buf_type[i]];
+		list_for_each_entry_safe(buf, next, &buffers->list, list)
+			count++;
+		if (count)
+			dev_err(inst->core->dev, "%d buffer of type %d not released", count, internal_buf_type[i]);
+	}
 }
 
 int iris_alloc_and_queue_persist_bufs(struct iris_inst *inst)
