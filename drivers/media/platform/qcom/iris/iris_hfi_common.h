@@ -108,6 +108,7 @@ struct iris_hfi_prop_type_handle {
 struct iris_hfi_command_ops {
 	int (*sys_init)(struct iris_core *core);
 	int (*sys_image_version)(struct iris_core *core);
+	int (*sys_set_debug)(struct iris_core *core);
 	int (*sys_interframe_powercollapse)(struct iris_core *core);
 	int (*sys_pc_prep)(struct iris_core *core);
 	int (*session_set_config_params)(struct iris_inst *inst, u32 plane);

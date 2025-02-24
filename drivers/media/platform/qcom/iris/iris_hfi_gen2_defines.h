@@ -156,6 +156,9 @@ enum hfi_packet_firmware_flags {
 	HFI_FW_FLAGS_SYSTEM_ERROR		= 0x00000008,
 };
 
+#define HFI_PROP_DEBUG_CONFIG                                   0x0300000a
+#define HFI_PROP_DEBUG_LOG_LEVEL                                0x0300000b
+
 struct hfi_debug_header {
 	u32 size;
 	u32 debug_level;

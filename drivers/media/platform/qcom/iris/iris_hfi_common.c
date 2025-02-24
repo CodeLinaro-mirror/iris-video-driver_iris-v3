@@ -87,6 +87,10 @@ int iris_hfi_core_init(struct iris_core *core)
 	if (ret)
 		return ret;
 
+	ret = hfi_ops->sys_set_debug(core);
+	if (ret)
+		return ret;
+
 	return hfi_ops->sys_interframe_powercollapse(core);
 }
 
