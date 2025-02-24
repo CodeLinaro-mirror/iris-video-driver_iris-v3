@@ -12,6 +12,10 @@
 static int iris_hfi_queue_write(struct iris_iface_q_info *qinfo, void *packet, u32 packet_size)
 {
 	struct iris_hfi_queue_header *queue = qinfo->qhdr;
+	if (!queue) {
+		pr_err("queue is NULL");
+		return -EINVAL;
+	}
 	u32 write_idx = queue->write_idx * sizeof(u32);
 	u32 read_idx = queue->read_idx * sizeof(u32);
 	u32 empty_space, new_write_idx, residue;
@@ -116,6 +120,10 @@ int iris_hfi_queue_cmd_write_locked(struct iris_core *core, void *pkt, u32 pkt_s
 	if (core->state == IRIS_CORE_ERROR)
 		return -EINVAL;
 
+	if (!q_info) {
+		dev_err(core->dev, "queue NULL\n");
+		return -EINVAL;
+	}
 	if (!iris_hfi_queue_write(q_info, pkt, pkt_size)) {
 		iris_vpu_raise_interrupt(core);
 	} else {
