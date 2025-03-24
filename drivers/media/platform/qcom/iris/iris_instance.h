@@ -43,6 +43,7 @@
  * @tss: timestamp metadata
  * @metadata_idx: index for metadata buffer
  * @in_reconfig: a flag raised by decoder when the stream resolution changes
+ * @last_buffer_dequeued: a flag to indicate that last buffer is sent by driver
  */
 
 struct iris_inst {
@@ -74,6 +75,7 @@ struct iris_inst {
 	struct iris_ts_metadata		tss[VIDEO_MAX_FRAME];
 	u32				metadata_idx;
 	bool				in_reconfig;
+	bool				last_buffer_dequeued;
 };
 
 #endif
