@@ -487,6 +487,7 @@ static int iris_vdec_process_streamon_output(struct iris_inst *inst)
 	if (ret)
 		return ret;
 
+	inst->in_reconfig = false;
 	return iris_inst_change_sub_state(inst, clear_sub_state, 0);
 }
 

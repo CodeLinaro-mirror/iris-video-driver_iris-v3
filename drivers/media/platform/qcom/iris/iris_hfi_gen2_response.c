@@ -508,6 +508,7 @@ static void iris_hfi_gen2_read_input_subcr_params(struct iris_inst *inst)
 	struct vb2_queue *dst_q;
 	struct v4l2_ctrl *ctrl;
 
+	inst->in_reconfig = true;
 	subsc_params = inst_hfi_gen2->src_subcr_params;
 	width = (subsc_params.bitstream_resolution &
 		HFI_BITMASK_BITSTREAM_WIDTH) >> 16;
