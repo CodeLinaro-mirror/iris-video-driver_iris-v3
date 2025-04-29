@@ -295,3 +295,55 @@ int iris_venc_subscribe_event(struct iris_inst *inst,
 		return -EINVAL;
 	}
 }
+
+int iris_venc_s_selection(struct iris_inst *inst, struct v4l2_selection *s)
+{
+	if (s->type != V4L2_BUF_TYPE_VIDEO_OUTPUT)
+		return -EINVAL;
+
+	switch (s->target) {
+	case V4L2_SEL_TGT_CROP:
+		if (s->r.left || s->r.top) {
+			s->r.left = 0;
+			s->r.top = 0;
+		}
+
+		if (s->r.width > inst->fmt_src->fmt.pix_mp.width)
+			s->r.width = inst->fmt_src->fmt.pix_mp.width;
+
+		if (s->r.height > inst->fmt_src->fmt.pix_mp.height)
+			s->r.height = inst->fmt_src->fmt.pix_mp.height;
+
+		inst->crop.left = s->r.left;
+		inst->crop.top = s->r.top;
+		inst->crop.width = s->r.width;
+		inst->crop.height = s->r.height;
+		inst->compose.left = inst->crop.left;
+		inst->compose.top = inst->crop.top;
+		inst->compose.width = inst->crop.width;
+		inst->compose.height = inst->crop.height;
+		return iris_venc_s_fmt_output(inst, inst->fmt_dst);
+	case V4L2_SEL_TGT_COMPOSE:
+		if (s->r.left < inst->crop.left)
+			s->r.left = inst->crop.left;
+
+		if (s->r.top < inst->crop.top)
+			s->r.top = inst->crop.top;
+
+		if (s->r.width > inst->crop.width)
+			s->r.width = inst->crop.width;
+
+		if (s->r.height > inst->crop.height)
+			s->r.height = inst->crop.height;
+
+		inst->compose.left = s->r.left;
+		inst->compose.top = s->r.top;
+		inst->compose.width = s->r.width;
+		inst->compose.height = s->r.height;
+		return iris_venc_s_fmt_output(inst, inst->fmt_dst);
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
