@@ -62,6 +62,9 @@ struct iris_fmt {
  * @codec: codec type
  * @in_reconfig: a flag raised by decoder when the stream resolution changes
  * @last_buffer_dequeued: a flag to indicate that last buffer is sent by driver
+ * @frame_rate: frame rate of current instance
+ * @operating_rate: operating rate of current instance
+
  */
 
 struct iris_inst {
@@ -98,6 +101,8 @@ struct iris_inst {
 	u32				codec;
 	bool				in_reconfig;
 	bool				last_buffer_dequeued;
+	u32				frame_rate;
+	u32				operating_rate;
 };
 
 #endif
