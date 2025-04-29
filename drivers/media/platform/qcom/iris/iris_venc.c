@@ -3,6 +3,7 @@
  * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <media/v4l2-event.h>
 #include <media/v4l2-mem2mem.h>
 
 #include "iris_buffer.h"
@@ -277,6 +278,19 @@ int iris_venc_s_fmt(struct iris_inst *inst, struct v4l2_format *f)
 		return iris_venc_s_fmt_input(inst, f);
 	case V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
 		return iris_venc_s_fmt_output(inst, f);
+	default:
+		return -EINVAL;
+	}
+}
+
+int iris_venc_subscribe_event(struct iris_inst *inst,
+			      const struct v4l2_event_subscription *sub)
+{
+	switch (sub->type) {
+	case V4L2_EVENT_EOS:
+		return v4l2_event_subscribe(&inst->fh, sub, 0, NULL);
+	case V4L2_EVENT_CTRL:
+		return v4l2_ctrl_subscribe_event(&inst->fh, sub);
 	default:
 		return -EINVAL;
 	}
