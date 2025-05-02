@@ -330,9 +330,9 @@ struct iris_platform_data sm8250_data = {
 	.max_session_count = 16,
 	.max_core_mbpf = NUM_MBS_8K,
 	.max_core_mbps = ((7680 * 4320) /256) * 60,
-	.input_config_params_default =
+	.dec_input_config_params_default =
 		sm8250_vdec_input_config_param_default,
-	.input_config_params_default_size =
+	.dec_input_config_params_default_size =
 		ARRAY_SIZE(sm8250_vdec_input_config_param_default),
 
 	.dec_ip_int_buf_tbl = sm8250_dec_ip_int_buf_tbl,
