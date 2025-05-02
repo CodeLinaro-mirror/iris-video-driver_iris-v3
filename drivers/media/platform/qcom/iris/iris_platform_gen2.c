@@ -214,6 +214,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.value = V4L2_MPEG_VIDEO_H264_PROFILE_HIGH,
 		.hfi_id = HFI_PROP_PROFILE,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU,
+		.set = iris_set_u32_enum,
 	},
 	{
 		.cap_id = PROFILE_HEVC,
@@ -225,6 +226,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.value = V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
 		.hfi_id = HFI_PROP_PROFILE,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU,
+		.set = iris_set_u32_enum,
 	},
 	{
 		.cap_id = LEVEL_H264,
@@ -251,6 +253,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.value = V4L2_MPEG_VIDEO_H264_LEVEL_5_0,
 		.hfi_id = HFI_PROP_LEVEL,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU,
+		.set = iris_set_u32_enum,
 	},
 	{
 		.cap_id = LEVEL_HEVC,
@@ -272,6 +275,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.value = V4L2_MPEG_VIDEO_HEVC_LEVEL_5,
 		.hfi_id = HFI_PROP_LEVEL,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU,
+		.set = iris_set_u32_enum,
 	},
 	{
 		.cap_id = STAGE,
@@ -280,6 +284,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.step_or_mask = 1,
 		.value = STAGE_2,
 		.hfi_id = HFI_PROP_STAGE,
+		.set = iris_set_stage,
 	},
 	{
 		.cap_id = HEADER_MODE,
@@ -290,6 +295,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.value = V4L2_MPEG_VIDEO_HEADER_MODE_SEPARATE,
 		.hfi_id = HFI_PROP_SEQ_HEADER_MODE,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU,
+		.set = iris_set_header_mode_gen2,
 	},
 	{
 		.cap_id = PREPEND_SPSPPS_TO_IDR,
@@ -307,6 +313,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.hfi_id = HFI_PROP_TOTAL_BITRATE,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
 			CAP_FLAG_DYNAMIC_ALLOWED,
+		.set = iris_set_bitrate,
 	},
 	{
 		.cap_id = BITRATE_PEAK,
@@ -317,6 +324,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.hfi_id = HFI_PROP_TOTAL_PEAK_BITRATE,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
 			CAP_FLAG_DYNAMIC_ALLOWED,
+		.set = iris_set_peak_bitrate,
 	},
 	{
 		.cap_id = BITRATE_MODE,
@@ -327,6 +335,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.value = V4L2_MPEG_VIDEO_BITRATE_MODE_VBR,
 		.hfi_id = HFI_PROP_RATE_CONTROL,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU,
+		.set = iris_set_bitrate_mode_gen2,
 	},
 	{
 		.cap_id = FRAME_SKIP_MODE,
@@ -354,6 +363,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.hfi_id = HFI_PROP_MAX_GOP_FRAMES,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
 			CAP_FLAG_DYNAMIC_ALLOWED,
+		.set = iris_set_u32,
 	},
 	{
 		.cap_id = ENTROPY_MODE,
@@ -364,6 +374,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.value = V4L2_MPEG_VIDEO_H264_ENTROPY_MODE_CABAC,
 		.hfi_id = HFI_PROP_CABAC_SESSION,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU,
+		.set = iris_set_entropy_mode_gen2,
 	},
 	{
 		.cap_id = TRANSFORM_8X8,
@@ -373,6 +384,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.value = 1,
 		.hfi_id = HFI_PROP_8X8_TRANSFORM,
 		.flags = CAP_FLAG_OUTPUT_PORT,
+		.set = iris_set_transform_8x8,
 	},
 	{
 		.cap_id = MIN_FRAME_QP_H264,
@@ -382,6 +394,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.value = MIN_QP_8BIT,
 		.hfi_id = HFI_PROP_MIN_QP_PACKED,
 		.flags = CAP_FLAG_OUTPUT_PORT,
+		.set = iris_set_min_qp,
 	},
 	{
 		.cap_id = MIN_FRAME_QP_HEVC,
@@ -391,6 +404,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.value = MIN_QP_8BIT,
 		.hfi_id = HFI_PROP_MIN_QP_PACKED,
 		.flags = CAP_FLAG_OUTPUT_PORT,
+		.set = iris_set_min_qp,
 	},
 	{
 		.cap_id = MAX_FRAME_QP_H264,
@@ -400,6 +414,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.value = MIN_QP_8BIT,
 		.hfi_id = HFI_PROP_MAX_QP_PACKED,
 		.flags = CAP_FLAG_OUTPUT_PORT,
+		.set = iris_set_max_qp,
 	},
 	{
 		.cap_id = MAX_FRAME_QP_HEVC,
@@ -409,6 +424,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.value = MIN_QP_8BIT,
 		.hfi_id = HFI_PROP_MAX_QP_PACKED,
 		.flags = CAP_FLAG_OUTPUT_PORT,
+		.set = iris_set_max_qp,
 	},
 	{
 		.cap_id = I_FRAME_MIN_QP_H264,
@@ -503,6 +519,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.hfi_id = HFI_PROP_QP_PACKED,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
 			CAP_FLAG_DYNAMIC_ALLOWED,
+		.set = iris_set_frame_qp,
 	},
 	{
 		.cap_id = I_FRAME_QP_HEVC,
@@ -513,6 +530,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.hfi_id = HFI_PROP_QP_PACKED,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
 			CAP_FLAG_DYNAMIC_ALLOWED,
+		.set = iris_set_frame_qp,
 	},
 	{
 		.cap_id = P_FRAME_QP_H264,
@@ -523,6 +541,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.hfi_id = HFI_PROP_QP_PACKED,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
 			CAP_FLAG_DYNAMIC_ALLOWED,
+		.set = iris_set_frame_qp,
 	},
 	{
 		.cap_id = P_FRAME_QP_HEVC,
@@ -533,6 +552,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.hfi_id = HFI_PROP_QP_PACKED,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
 			CAP_FLAG_DYNAMIC_ALLOWED,
+		.set = iris_set_frame_qp,
 	},
 	{
 		.cap_id = B_FRAME_QP_H264,
@@ -543,6 +563,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.hfi_id = HFI_PROP_QP_PACKED,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
 			CAP_FLAG_DYNAMIC_ALLOWED,
+		.set = iris_set_frame_qp,
 	},
 	{
 		.cap_id = B_FRAME_QP_HEVC,
@@ -553,6 +574,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.hfi_id = HFI_PROP_QP_PACKED,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_INPUT_PORT |
 			CAP_FLAG_DYNAMIC_ALLOWED,
+		.set = iris_set_frame_qp,
 	},
 };
 
