@@ -176,6 +176,8 @@ int iris_open(struct file *filp)
 	INIT_LIST_HEAD(&inst->buffers[BUF_DPB].list);
 	INIT_LIST_HEAD(&inst->buffers[BUF_PERSIST].list);
 	INIT_LIST_HEAD(&inst->buffers[BUF_SCRATCH_1].list);
+	INIT_LIST_HEAD(&inst->buffers[BUF_SCRATCH_2].list);
+	INIT_LIST_HEAD(&inst->buffers[BUF_VPSS].list);
 	init_completion(&inst->completion);
 	init_completion(&inst->flush_completion);
 
