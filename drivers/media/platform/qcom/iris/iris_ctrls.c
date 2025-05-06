@@ -458,6 +458,27 @@ int iris_set_level(struct iris_inst *inst, enum platform_inst_fw_cap_type cap_id
 					     &hfi_value, sizeof(u32));
 }
 
+int iris_set_profile_level_gen1(struct iris_inst *inst, enum platform_inst_fw_cap_type cap_id)
+{
+	const struct iris_hfi_command_ops *hfi_ops = inst->core->hfi_ops;
+	u32 hfi_id = inst->fw_caps[cap_id].hfi_id;
+	struct hfi_profile_level pl;
+
+	if (inst->codec == V4L2_PIX_FMT_H264) {
+		pl.profile = inst->fw_caps[PROFILE_H264].value;
+		pl.level = inst->fw_caps[LEVEL_H264].value;
+	} else {
+		pl.profile = inst->fw_caps[PROFILE_HEVC].value;
+		pl.level = inst->fw_caps[LEVEL_HEVC].value;
+	}
+
+	return hfi_ops->session_set_property(inst, hfi_id,
+					     HFI_HOST_FLAGS_NONE,
+					     iris_get_port_info(inst, cap_id),
+					     HFI_PAYLOAD_U32_ENUM,
+					     &pl, sizeof(u32));
+}
+
 int iris_set_header_mode_gen1(struct iris_inst *inst, enum platform_inst_fw_cap_type cap_id)
 {
 	const struct iris_hfi_command_ops *hfi_ops = inst->core->hfi_ops;

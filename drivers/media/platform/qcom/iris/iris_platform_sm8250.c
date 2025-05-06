@@ -52,7 +52,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8250_enc[] = {
 		.value = V4L2_MPEG_VIDEO_H264_PROFILE_HIGH,
 		.hfi_id = HFI_PROPERTY_PARAM_PROFILE_LEVEL_CURRENT,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU,
-		.set = iris_set_u32_enum,
+		.set = iris_set_profile_level_gen1,
 	},
 	{
 		.cap_id = PROFILE_HEVC,
@@ -64,7 +64,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8250_enc[] = {
 		.value = V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
 		.hfi_id = HFI_PROPERTY_PARAM_PROFILE_LEVEL_CURRENT,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU,
-		.set = iris_set_u32_enum,
+		.set = iris_set_profile_level_gen1,
 	},
 	{
 		.cap_id = LEVEL_H264,
@@ -89,7 +89,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8250_enc[] = {
 		.value = V4L2_MPEG_VIDEO_H264_LEVEL_1_0,
 		.hfi_id = HFI_PROPERTY_PARAM_PROFILE_LEVEL_CURRENT,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU,
-		.set = iris_set_u32_enum,
+		.set = iris_set_profile_level_gen1,
 	},
 	{
 		.cap_id = LEVEL_HEVC,
@@ -111,7 +111,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8250_enc[] = {
 		.value = V4L2_MPEG_VIDEO_H264_LEVEL_1_0,
 		.hfi_id = HFI_PROPERTY_PARAM_PROFILE_LEVEL_CURRENT,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU,
-		.set = iris_set_u32_enum,
+		.set = iris_set_profile_level_gen1,
 	},
 	{
 		.cap_id = HEADER_MODE,

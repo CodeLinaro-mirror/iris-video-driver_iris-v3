@@ -569,6 +569,22 @@ iris_hfi_gen1_packet_session_set_property(struct hfi_session_set_property_pkt *p
 		packet->shdr.hdr.size += sizeof(u32) + sizeof(*wm);
 		break;
 	}
+	case HFI_PROPERTY_PARAM_PROFILE_LEVEL_CURRENT: {
+		struct hfi_profile_level *in = pdata, *pl = prop_data;
+
+		pl->level = in->level;
+		pl->profile = in->profile;
+		if (pl->profile <= 0)
+			/* Profile not supported, falling back to high */
+			pl->profile = V4L2_MPEG_VIDEO_H264_PROFILE_HIGH;
+
+		if (!pl->level)
+			/* Level not supported, falling back to 1 */
+			pl->level = 1;
+
+		packet->shdr.hdr.size += sizeof(u32) + sizeof(*pl);
+		break;
+	}
 	case HFI_PROPERTY_CONFIG_VENC_SYNC_FRAME_SEQUENCE_HEADER: {
 		struct hfi_enable *en = prop_data;
 		u32 *in = pdata;
