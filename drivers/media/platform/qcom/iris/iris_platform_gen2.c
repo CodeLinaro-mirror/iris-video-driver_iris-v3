@@ -214,7 +214,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.value = V4L2_MPEG_VIDEO_H264_PROFILE_HIGH,
 		.hfi_id = HFI_PROP_PROFILE,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU,
-		.set = iris_set_u32_enum,
+		.set = iris_set_profile,
 	},
 	{
 		.cap_id = PROFILE_HEVC,
@@ -226,7 +226,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.value = V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN,
 		.hfi_id = HFI_PROP_PROFILE,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU,
-		.set = iris_set_u32_enum,
+		.set = iris_set_profile,
 	},
 	{
 		.cap_id = LEVEL_H264,
@@ -253,7 +253,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.value = V4L2_MPEG_VIDEO_H264_LEVEL_5_0,
 		.hfi_id = HFI_PROP_LEVEL,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU,
-		.set = iris_set_u32_enum,
+		.set = iris_set_level,
 	},
 	{
 		.cap_id = LEVEL_HEVC,
@@ -275,7 +275,7 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8550_enc[] = {
 		.value = V4L2_MPEG_VIDEO_HEVC_LEVEL_5,
 		.hfi_id = HFI_PROP_LEVEL,
 		.flags = CAP_FLAG_OUTPUT_PORT | CAP_FLAG_MENU,
-		.set = iris_set_u32_enum,
+		.set = iris_set_level,
 	},
 	{
 		.cap_id = STAGE,
