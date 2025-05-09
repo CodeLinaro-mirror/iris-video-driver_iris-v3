@@ -158,17 +158,17 @@ int iris_venc_try_fmt(struct iris_inst *inst, struct v4l2_format *f)
 	case V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE:
 		if (f->fmt.pix_mp.pixelformat != V4L2_PIX_FMT_NV12) {
 			f_inst = inst->fmt_src;
-			f_inst->fmt.pix_mp.width = f->fmt.pix_mp.width;
-			f_inst->fmt.pix_mp.height = f->fmt.pix_mp.height;
-			f_inst->fmt.pix_mp.pixelformat = f->fmt.pix_mp.pixelformat;
+			f->fmt.pix_mp.width = f_inst->fmt.pix_mp.width;
+			f->fmt.pix_mp.height = f_inst->fmt.pix_mp.height;
+			f->fmt.pix_mp.pixelformat = f_inst->fmt.pix_mp.pixelformat;
 		}
 		break;
 	case V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE:
 		if (!fmt) {
 			f_inst = inst->fmt_dst;
-			f_inst->fmt.pix_mp.width = f->fmt.pix_mp.width;
-			f_inst->fmt.pix_mp.height = f->fmt.pix_mp.height;
-			f_inst->fmt.pix_mp.pixelformat = f->fmt.pix_mp.pixelformat;
+			f->fmt.pix_mp.width = f_inst->fmt.pix_mp.width;
+			f->fmt.pix_mp.height = f_inst->fmt.pix_mp.height;
+			f->fmt.pix_mp.pixelformat = f_inst->fmt.pix_mp.pixelformat;
 		}
 		break;
 	default:
