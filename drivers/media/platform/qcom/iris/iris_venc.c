@@ -65,6 +65,9 @@ int iris_venc_inst_init(struct iris_inst *inst)
 	inst->buffers[BUF_INPUT].min_count = iris_vpu_buf_count(inst, BUF_INPUT);
 	inst->buffers[BUF_INPUT].size = f->fmt.pix_mp.plane_fmt[0].sizeimage;
 
+	inst->operating_rate = DEFAULT_FPS << 16;
+	inst->frame_rate = DEFAULT_FPS << 16;
+
 	memcpy(&inst->fw_caps[0], &core->inst_fw_caps_enc[0],
 	       INST_FW_CAP_MAX * sizeof(struct platform_inst_fw_cap));
 
@@ -134,7 +137,7 @@ int iris_venc_enum_fmt(struct iris_inst *inst, struct v4l2_fmtdesc *f)
 			return -EINVAL;
 
 		f->pixelformat = fmt->pixfmt;
-		f->flags = V4L2_FMT_FLAG_COMPRESSED;
+		f->flags = V4L2_FMT_FLAG_COMPRESSED | V4L2_FMT_FLAG_ENC_CAP_FRAME_INTERVAL;
 		break;
 	default:
 		return -EINVAL;
