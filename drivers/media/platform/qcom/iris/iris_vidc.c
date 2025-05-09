@@ -458,7 +458,6 @@ static int iris_g_selection(struct file *filp, void *fh, struct v4l2_selection *
 		case V4L2_SEL_TGT_COMPOSE_BOUNDS:
 		case V4L2_SEL_TGT_COMPOSE_PADDED:
 		case V4L2_SEL_TGT_COMPOSE_DEFAULT:
-		case V4L2_SEL_TGT_COMPOSE:
 			s->r.left = inst->compose.left;
 			s->r.top = inst->compose.top;
 			s->r.width = inst->compose.width;

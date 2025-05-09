@@ -333,24 +333,6 @@ int iris_venc_s_selection(struct iris_inst *inst, struct v4l2_selection *s)
 		inst->compose.width = inst->crop.width;
 		inst->compose.height = inst->crop.height;
 		return iris_venc_s_fmt_output(inst, inst->fmt_dst);
-	case V4L2_SEL_TGT_COMPOSE:
-		if (s->r.left < inst->crop.left)
-			s->r.left = inst->crop.left;
-
-		if (s->r.top < inst->crop.top)
-			s->r.top = inst->crop.top;
-
-		if (s->r.width > inst->crop.width)
-			s->r.width = inst->crop.width;
-
-		if (s->r.height > inst->crop.height)
-			s->r.height = inst->crop.height;
-
-		inst->compose.left = s->r.left;
-		inst->compose.top = s->r.top;
-		inst->compose.width = s->r.width;
-		inst->compose.height = s->r.height;
-		return iris_venc_s_fmt_output(inst, inst->fmt_dst);
 	default:
 		return -EINVAL;
 	}
