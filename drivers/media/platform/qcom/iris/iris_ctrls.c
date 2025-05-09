@@ -283,11 +283,13 @@ int iris_ctrls_init(struct iris_inst *inst)
 		ctrl_idx++;
 	}
 
-	v4l2_ctrl_new_std(&inst->ctrl_handler, NULL,
-			  V4L2_CID_MIN_BUFFERS_FOR_CAPTURE, 1, 32, 1, 4);
-
-	v4l2_ctrl_new_std(&inst->ctrl_handler, NULL,
-			  V4L2_CID_MIN_BUFFERS_FOR_OUTPUT, 1, 32, 1, 4);
+	if (inst->domain == DECODER) {
+		v4l2_ctrl_new_std(&inst->ctrl_handler, NULL,
+			V4L2_CID_MIN_BUFFERS_FOR_CAPTURE, 1, 32, 1, 4);
+	} else {
+		v4l2_ctrl_new_std(&inst->ctrl_handler, NULL,
+			V4L2_CID_MIN_BUFFERS_FOR_OUTPUT, 1, 32, 1, 4);
+	}
 
 	ret = inst->ctrl_handler.error;
 	if (ret)
