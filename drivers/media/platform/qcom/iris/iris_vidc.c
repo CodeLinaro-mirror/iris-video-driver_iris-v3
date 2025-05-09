@@ -560,6 +560,10 @@ static int iris_enc_cmd(struct file *filp, void *fh,
 
 	mutex_lock(&inst->lock);
 
+	ret = v4l2_m2m_ioctl_encoder_cmd(filp, fh, enc);
+	if (ret)
+		goto unlock;
+
 	if (inst->state == IRIS_INST_DEINIT)
 		goto unlock;
 
