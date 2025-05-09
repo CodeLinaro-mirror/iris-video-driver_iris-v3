@@ -222,8 +222,8 @@ static int iris_hfi_gen2_set_crop_offsets(struct iris_inst *inst, u32 plane)
 		left_offset = inst->crop.left;
 		top_offset = inst->crop.top;
 	} else {
-		bottom_offset = (inst->fmt_src->fmt.pix_mp.height - inst->compose.height);
-		right_offset = (inst->fmt_src->fmt.pix_mp.width - inst->compose.width);
+		bottom_offset = (inst->fmt_dst->fmt.pix_mp.height - inst->compose.height);
+		right_offset = (inst->fmt_dst->fmt.pix_mp.width - inst->compose.width);
 		left_offset = inst->compose.left;
 		top_offset = inst->compose.top;
 	}
