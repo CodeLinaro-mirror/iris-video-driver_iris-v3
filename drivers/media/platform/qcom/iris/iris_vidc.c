@@ -373,6 +373,7 @@ static int iris_enum_frameintervals(struct file *filp, void *fh,
 	struct platform_inst_caps *caps;
 	struct iris_core *core = inst->core;
 	u32 fps, mbpf;
+	int ret = 0;
 
 	if (inst->domain == DECODER)
 		return -ENOTTY;
@@ -380,8 +381,9 @@ static int iris_enum_frameintervals(struct file *filp, void *fh,
 	if (fival->index)
 		return -EINVAL;
 
-	if (fival->pixel_format != V4L2_PIX_FMT_NV12)
-		return -EINVAL;
+	ret = iris_venc_validate_format(inst, fival->pixel_format);
+	if (ret)
+		return ret;
 
 	if (!fival->width || !fival->height)
 		return -EINVAL;
