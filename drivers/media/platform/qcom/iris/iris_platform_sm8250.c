@@ -40,6 +40,15 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8250_dec[] = {
 
 static struct platform_inst_fw_cap inst_fw_cap_sm8250_enc[] = {
 	{
+		.cap_id = STAGE,
+		.min = STAGE_1,
+		.max = STAGE_2,
+		.step_or_mask = 1,
+		.value = STAGE_2,
+		.hfi_id = HFI_PROPERTY_PARAM_WORK_MODE,
+		.set = iris_set_stage,
+	},
+	{
 		.cap_id = PROFILE_H264,
 		.min = V4L2_MPEG_VIDEO_H264_PROFILE_BASELINE,
 		.max = V4L2_MPEG_VIDEO_H264_PROFILE_MULTIVIEW_HIGH,
