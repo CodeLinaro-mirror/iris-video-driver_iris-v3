@@ -457,23 +457,18 @@ static int iris_g_selection(struct file *filp, void *fh, struct v4l2_selection *
 		switch (s->target) {
 		case V4L2_SEL_TGT_CROP_BOUNDS:
 		case V4L2_SEL_TGT_CROP_DEFAULT:
+			s->r.width = inst->fmt_src->fmt.pix_mp.width;
+			s->r.height = inst->fmt_src->fmt.pix_mp.height;
+			break;
 		case V4L2_SEL_TGT_CROP:
-			s->r.left = inst->crop.left;
-			s->r.top = inst->crop.top;
 			s->r.width = inst->crop.width;
 			s->r.height = inst->crop.height;
-			break;
-		case V4L2_SEL_TGT_COMPOSE_BOUNDS:
-		case V4L2_SEL_TGT_COMPOSE_PADDED:
-		case V4L2_SEL_TGT_COMPOSE_DEFAULT:
-			s->r.left = inst->compose.left;
-			s->r.top = inst->compose.top;
-			s->r.width = inst->compose.width;
-			s->r.height = inst->compose.height;
 			break;
 		default:
 			return -EINVAL;
 		}
+		s->r.left = inst->crop.left;
+		s->r.top = inst->crop.top;
 	}
 
 	return 0;
