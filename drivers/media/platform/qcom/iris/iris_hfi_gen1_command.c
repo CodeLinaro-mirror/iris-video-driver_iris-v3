@@ -981,30 +981,12 @@ static int iris_hfi_gen1_set_stride(struct iris_inst *inst, u32 plane)
 
 static int iris_hfi_gen1_session_set_config_params(struct iris_inst *inst, u32 plane)
 {
+	struct iris_hfi_prop_type_handle const *handler = NULL;
+	u32 handler_size = 0;
 	struct iris_core *core = inst->core;
 	u32 config_params_size, i, j;
 	const u32 *config_params;
 	int ret;
-
-	if (inst->domain == ENCODER) {
-		ret = iris_hfi_gen1_set_frame_rate(inst, plane);
-		if (ret)
-			return ret;
-
-		ret = iris_hfi_gen1_set_stride(inst, plane);
-		if (ret)
-			return ret;
-
-		ret = iris_hfi_gen1_set_resolution(inst, plane);
-		if (ret)
-			return ret;
-
-		ret = iris_hfi_gen1_set_raw_format(inst, plane);
-		if (ret)
-			return ret;
-
-		return iris_hfi_gen1_set_num_bufs(inst, plane);
-	}
 
 	static const struct iris_hfi_prop_type_handle vdec_prop_type_handle_inp_arr[] = {
 		{HFI_PROPERTY_PARAM_FRAME_SIZE,
@@ -1038,30 +1020,43 @@ static int iris_hfi_gen1_session_set_config_params(struct iris_inst *inst, u32 p
 			iris_hfi_gen1_set_bufsize},
 	};
 
+	static const struct iris_hfi_prop_type_handle venc_prop_type_handle_inp_arr[] = {
+		{HFI_PROPERTY_CONFIG_FRAME_RATE,
+			iris_hfi_gen1_set_frame_rate},
+		{HFI_PROPERTY_PARAM_UNCOMPRESSED_PLANE_ACTUAL_INFO,
+			iris_hfi_gen1_set_stride},
+		{HFI_PROPERTY_PARAM_FRAME_SIZE,
+			iris_hfi_gen1_set_resolution},
+		{HFI_PROPERTY_PARAM_UNCOMPRESSED_FORMAT_SELECT,
+			iris_hfi_gen1_set_raw_format},
+		{HFI_PROPERTY_PARAM_BUFFER_COUNT_ACTUAL,
+			iris_hfi_gen1_set_num_bufs},
+	};
 
-	config_params = core->iris_platform_data->dec_input_config_params_default;
-	config_params_size = core->iris_platform_data->dec_input_config_params_default_size;
-
-	if (V4L2_TYPE_IS_OUTPUT(plane)) {
-		for (i = 0; i < config_params_size; i++) {
-			for (j = 0; j < ARRAY_SIZE(vdec_prop_type_handle_inp_arr); j++) {
-				if (vdec_prop_type_handle_inp_arr[j].type == config_params[i]) {
-					ret = vdec_prop_type_handle_inp_arr[j].handle(inst, plane);
-					if (ret)
-						return ret;
-					break;
-				}
-			}
+	if (inst->domain == DECODER) {
+		config_params = core->iris_platform_data->dec_input_config_params_default;
+		config_params_size = core->iris_platform_data->dec_input_config_params_default_size;
+		if (V4L2_TYPE_IS_OUTPUT(plane)) {
+			handler = vdec_prop_type_handle_inp_arr;
+			handler_size = ARRAY_SIZE(vdec_prop_type_handle_inp_arr);
+		} else if (V4L2_TYPE_IS_CAPTURE(plane)) {
+			handler = vdec_prop_type_handle_out_arr;
+			handler_size = ARRAY_SIZE(vdec_prop_type_handle_out_arr);
 		}
-	} else if (V4L2_TYPE_IS_CAPTURE(plane)) {
-		for (i = 0; i < config_params_size; i++) {
-			for (j = 0; j < ARRAY_SIZE(vdec_prop_type_handle_out_arr); j++) {
-				if (vdec_prop_type_handle_out_arr[j].type == config_params[i]) {
-					ret = vdec_prop_type_handle_out_arr[j].handle(inst, plane);
-					if (ret)
-						return ret;
-					break;
-				}
+	} else {
+		config_params = core->iris_platform_data->enc_input_config_params;
+		config_params_size = core->iris_platform_data->enc_input_config_params_size;
+		handler = venc_prop_type_handle_inp_arr;
+		handler_size = ARRAY_SIZE(venc_prop_type_handle_inp_arr);
+	}
+
+	for (i = 0; i < config_params_size; i++) {
+		for (j = 0; j < handler_size; j++) {
+			if (handler[j].type == config_params[i]) {
+				ret = handler[j].handle(inst, plane);
+				if (ret)
+					return ret;
+				break;
 			}
 		}
 	}

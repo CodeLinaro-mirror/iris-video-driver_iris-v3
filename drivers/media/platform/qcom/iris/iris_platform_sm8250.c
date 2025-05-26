@@ -312,6 +312,14 @@ static const u32 sm8250_vdec_input_config_param_default[] = {
 	HFI_PROPERTY_PARAM_BUFFER_ALLOC_MODE,
 };
 
+static const u32 sm8250_venc_input_config_param[] = {
+	HFI_PROPERTY_CONFIG_FRAME_RATE,
+	HFI_PROPERTY_PARAM_UNCOMPRESSED_PLANE_ACTUAL_INFO,
+	HFI_PROPERTY_PARAM_FRAME_SIZE,
+	HFI_PROPERTY_PARAM_UNCOMPRESSED_FORMAT_SELECT,
+	HFI_PROPERTY_PARAM_BUFFER_COUNT_ACTUAL,
+};
+
 static const u32 sm8250_dec_ip_int_buf_tbl[] = {
 	BUF_BIN,
 	BUF_SCRATCH_1,
@@ -364,6 +372,9 @@ struct iris_platform_data sm8250_data = {
 		sm8250_vdec_input_config_param_default,
 	.dec_input_config_params_default_size =
 		ARRAY_SIZE(sm8250_vdec_input_config_param_default),
+	.enc_input_config_params = sm8250_venc_input_config_param,
+	.enc_input_config_params_size =
+		ARRAY_SIZE(sm8250_venc_input_config_param),
 
 	.dec_ip_int_buf_tbl = sm8250_dec_ip_int_buf_tbl,
 	.dec_ip_int_buf_tbl_size = ARRAY_SIZE(sm8250_dec_ip_int_buf_tbl),
