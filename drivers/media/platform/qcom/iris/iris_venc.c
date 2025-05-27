@@ -554,7 +554,7 @@ int iris_venc_start_cmd(struct iris_inst *inst)
 			return -EBUSY;
 		}
 
-		return iris_inst_change_sub_state(inst, clear_sub_state, 0);
+	return iris_inst_change_sub_state(inst, clear_sub_state, 0);
 
 }
 

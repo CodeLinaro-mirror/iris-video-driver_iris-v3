@@ -583,7 +583,7 @@ int iris_set_bitrate_mode_gen1(struct iris_inst *inst, enum platform_inst_fw_cap
 	u32 frame_rc = inst->fw_caps[FRAME_RC_ENABLE].value;
 	u32 frame_skip = inst->fw_caps[FRAME_SKIP_MODE].value;
 	u32 hfi_id = inst->fw_caps[cap_id].hfi_id;
-	u32 rc_mode;
+	u32 rc_mode = 0;
 
 	if (!frame_rc)
 		rc_mode = HFI_RATE_CONTROL_OFF;
@@ -611,7 +611,7 @@ int iris_set_bitrate_mode_gen2(struct iris_inst *inst, enum platform_inst_fw_cap
 	u32 frame_rc = inst->fw_caps[FRAME_RC_ENABLE].value;
 	u32 frame_skip = inst->fw_caps[FRAME_SKIP_MODE].value;
 	u32 hfi_id = inst->fw_caps[cap_id].hfi_id;
-	u32 rc_mode;
+	u32 rc_mode = 0;
 
 	if (!frame_rc)
 		rc_mode = HFI_RC_OFF;
@@ -704,8 +704,8 @@ int iris_set_transform_8x8(struct iris_inst *inst, enum platform_inst_fw_cap_typ
 int iris_set_min_qp(struct iris_inst *inst, enum platform_inst_fw_cap_type cap_id)
 {
 	const struct iris_hfi_command_ops *hfi_ops = inst->core->hfi_ops;
-	u32 i_qp_enable, p_qp_enable, b_qp_enable, min_qp_enable, client_qp_enable;
-	u32 i_frame_qp, p_frame_qp, b_frame_qp;
+	u32 i_qp_enable = 0, p_qp_enable = 0, b_qp_enable = 0, min_qp_enable = 0, client_qp_enable = 0;
+	u32 i_frame_qp = 0, p_frame_qp = 0, b_frame_qp = 0;
 	u32 hfi_id = inst->fw_caps[cap_id].hfi_id;
 	u32 hfi_val;
 
@@ -755,7 +755,7 @@ int iris_set_min_qp(struct iris_inst *inst, enum platform_inst_fw_cap_type cap_i
 int iris_set_max_qp(struct iris_inst *inst, enum platform_inst_fw_cap_type cap_id)
 {
 	const struct iris_hfi_command_ops *hfi_ops = inst->core->hfi_ops;
-	u32 i_qp_enable, p_qp_enable, b_qp_enable, max_qp_enable, client_qp_enable;
+	u32 i_qp_enable = 0, p_qp_enable = 0, b_qp_enable = 0, max_qp_enable = 0, client_qp_enable;
 	u32 i_frame_qp, p_frame_qp, b_frame_qp;
 	u32 hfi_id = inst->fw_caps[cap_id].hfi_id;
 	u32 hfi_val;
@@ -807,7 +807,7 @@ int iris_set_max_qp(struct iris_inst *inst, enum platform_inst_fw_cap_type cap_i
 int iris_set_frame_qp(struct iris_inst *inst, enum platform_inst_fw_cap_type cap_id)
 {
 	const struct iris_hfi_command_ops *hfi_ops = inst->core->hfi_ops;
-	u32 i_qp_enable, p_qp_enable, b_qp_enable, client_qp_enable;
+	u32 i_qp_enable = 0, p_qp_enable = 0, b_qp_enable = 0, client_qp_enable;
 	u32 i_frame_qp, p_frame_qp, b_frame_qp;
 	u32 hfi_id = inst->fw_caps[cap_id].hfi_id;
 	struct vb2_queue *q;

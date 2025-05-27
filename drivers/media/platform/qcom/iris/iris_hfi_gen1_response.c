@@ -484,7 +484,7 @@ static void iris_hfi_gen1_session_ftb_done(struct iris_inst *inst, void *packet)
 		timestamp_us = timestamp_hi;
 		timestamp_us = (timestamp_us << 32) | timestamp_lo;
 	} else {
-		if (uncom_pkt->stream_id == 1 && !inst->last_buffer_dequeued) {
+		if (inst->domain == DECODER && uncom_pkt->stream_id == 1 && !inst->last_buffer_dequeued) {
 			if (inst->sub_state & IRIS_INST_SUB_DRC &&
 			    inst->sub_state & IRIS_INST_SUB_DRC_LAST) {
 				flags |= V4L2_BUF_FLAG_LAST;

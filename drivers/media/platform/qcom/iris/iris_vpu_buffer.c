@@ -1400,8 +1400,8 @@ struct iris_vpu_buf_type_handle {
 
 int iris_vpu_buf_size(struct iris_inst *inst, enum iris_buffer_type buffer_type)
 {
-	const struct iris_vpu_buf_type_handle *buf_type_handle_arr;
-	u32 size = 0, buf_type_handle_size, i;
+	const struct iris_vpu_buf_type_handle *buf_type_handle_arr = NULL;
+	u32 size = 0, buf_type_handle_size = 0, i;
 
 	static const struct iris_vpu_buf_type_handle dec_internal_buf_type_handle[] = {
 		{BUF_BIN,         iris_vpu_dec_bin_size             },
