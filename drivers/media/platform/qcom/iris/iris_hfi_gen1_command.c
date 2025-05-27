@@ -959,7 +959,7 @@ static int iris_hfi_gen1_set_frame_rate(struct iris_inst *inst, u32 plane)
 		return 0;
 
 	frate.buffer_type = HFI_BUFFER_OUTPUT;
-	frate.framerate = inst->frame_rate * (1 << 16);
+	frate.framerate = inst->frame_rate >> 16;
 
 	return hfi_gen1_set_property(inst, ptype, &frate, sizeof(frate));
 }
