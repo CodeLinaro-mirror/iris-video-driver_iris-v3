@@ -216,16 +216,23 @@ static int iris_hfi_gen2_set_crop_offsets(struct iris_inst *inst, u32 plane)
 	u32 left_offset, top_offset;
 	u32 payload[2];
 
-	if (V4L2_TYPE_IS_OUTPUT(plane)) {
+	if (inst->domain == DECODER) {
+		if (V4L2_TYPE_IS_OUTPUT(plane)) {
+			bottom_offset = (inst->fmt_src->fmt.pix_mp.height - inst->crop.height);
+			right_offset = (inst->fmt_src->fmt.pix_mp.width - inst->crop.width);
+			left_offset = inst->crop.left;
+			top_offset = inst->crop.top;
+		} else {
+			bottom_offset = (inst->fmt_dst->fmt.pix_mp.height - inst->compose.height);
+			right_offset = (inst->fmt_dst->fmt.pix_mp.width - inst->compose.width);
+			left_offset = inst->compose.left;
+			top_offset = inst->compose.top;
+		}
+	} else {
 		bottom_offset = (inst->fmt_src->fmt.pix_mp.height - inst->crop.height);
 		right_offset = (inst->fmt_src->fmt.pix_mp.width - inst->crop.width);
 		left_offset = inst->crop.left;
 		top_offset = inst->crop.top;
-	} else {
-		bottom_offset = (inst->fmt_dst->fmt.pix_mp.height - inst->compose.height);
-		right_offset = (inst->fmt_dst->fmt.pix_mp.width - inst->compose.width);
-		left_offset = inst->compose.left;
-		top_offset = inst->compose.top;
 	}
 
 	payload[0] = FIELD_PREP(GENMASK(31, 16), left_offset) | top_offset;
