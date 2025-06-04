@@ -195,7 +195,16 @@ int iris_vb2_start_streaming(struct vb2_queue *q, unsigned int count)
 
 	buf_type = iris_v4l2_type_to_driver(q->type);
 
-	ret = iris_queue_deferred_buffers(inst, buf_type);
+	if (inst->domain == DECODER) {
+		ret = iris_queue_deferred_buffers(inst, buf_type);
+	} else {
+		if (inst->state == IRIS_INST_STREAMING) {
+			ret = iris_queue_deferred_buffers(inst, BUF_INPUT);
+			if (!ret)
+				ret = iris_queue_deferred_buffers(inst, BUF_OUTPUT);
+		}
+	}
+
 	if (ret)
 		goto error;
 
