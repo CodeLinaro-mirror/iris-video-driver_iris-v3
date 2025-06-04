@@ -297,7 +297,7 @@ static int iris_hfi_gen1_queue_input_buffer(struct iris_inst *inst, struct iris_
 	} else {
 		uncom_ip_pkt.shdr.hdr.size = sizeof(struct hfi_session_empty_buffer_uncompressed_pkt);
 		uncom_ip_pkt.shdr.hdr.pkt_type = HFI_CMD_SESSION_EMPTY_BUFFER;
-		uncom_ip_pkt.shdr.session_id = hash32_ptr(inst);
+		uncom_ip_pkt.shdr.session_id = inst->session_id;
 		uncom_ip_pkt.time_stamp_hi = upper_32_bits(buf->timestamp);
 		uncom_ip_pkt.time_stamp_lo = lower_32_bits(buf->timestamp);
 		uncom_ip_pkt.flags = buf->flags;
