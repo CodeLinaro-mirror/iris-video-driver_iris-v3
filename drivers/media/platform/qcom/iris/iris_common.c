@@ -22,6 +22,7 @@ int iris_vb2_buffer_to_driver(struct vb2_buffer *vb2, struct iris_buffer *buf)
 	buf->data_size = vb2->planes[0].bytesused - vb2->planes[0].data_offset;
 	buf->flags = vbuf->flags;
 	buf->timestamp = vb2->timestamp;
+	do_div(buf->timestamp, NSEC_PER_USEC);
 	buf->attr = 0;
 
 	return 0;
