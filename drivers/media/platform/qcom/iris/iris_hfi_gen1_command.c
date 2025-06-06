@@ -237,7 +237,6 @@ static int iris_hfi_gen1_session_stop(struct iris_inst *inst, u32 plane)
 	} else {
 		if (inst->state == IRIS_INST_STREAMING ||
 			inst->state == IRIS_INST_INPUT_STREAMING ||
-			inst->state == IRIS_INST_OUTPUT_STREAMING ||
 			inst->state == IRIS_INST_ERROR) {
 			reinit_completion(&inst->completion);
 			iris_hfi_gen1_packet_session_cmd(inst, &pkt, HFI_CMD_SESSION_STOP);
