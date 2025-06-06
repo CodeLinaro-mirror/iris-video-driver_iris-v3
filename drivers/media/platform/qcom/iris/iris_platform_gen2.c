@@ -15,7 +15,6 @@
 
 #define VIDEO_ARCH_LX 1
 #define BITRATE_MAX				245000000
-#define BITRATE_DEFAULT			20000000
 
 static struct platform_inst_fw_cap inst_fw_cap_sm8550_dec[] = {
 	{

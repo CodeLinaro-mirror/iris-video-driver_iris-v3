@@ -27,6 +27,7 @@ struct iris_inst;
 #define MAX_QP					51
 #define MAX_QP_HEVC				63
 #define DEFAULT_QP				20
+#define BITRATE_DEFAULT			20000000
 
 enum stage_type {
 	STAGE_1 = 1,
