@@ -396,7 +396,7 @@ static int iris_enum_frameintervals(struct file *filp, void *fh,
 		return -EINVAL;
 
 	mbpf = NUM_MBS_PER_FRAME(fival->height, fival->width);
-	fps = core->iris_platform_data->max_core_mbps / mbpf;
+	fps = DIV_ROUND_UP(core->iris_platform_data->max_core_mbps, mbpf);
 
 	fival->type = V4L2_FRMIVAL_TYPE_STEPWISE;
 	fival->stepwise.min.numerator = 1;
