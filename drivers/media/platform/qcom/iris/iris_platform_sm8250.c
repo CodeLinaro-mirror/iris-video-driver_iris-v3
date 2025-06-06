@@ -201,16 +201,6 @@ static struct platform_inst_fw_cap inst_fw_cap_sm8250_enc[] = {
 		.set = iris_set_entropy_mode_gen1,
 	},
 	{
-		.cap_id = TRANSFORM_8X8,
-		.min = 0,
-		.max = 1,
-		.step_or_mask = 1,
-		.value = 1,
-		.hfi_id = HFI_PROPERTY_PARAM_VENC_H264_TRANSFORM_8X8,
-		.flags = CAP_FLAG_OUTPUT_PORT,
-		.set = iris_set_transform_8x8,
-	},
-	{
 		.cap_id = MIN_FRAME_QP_H264,
 		.min = MIN_QP_8BIT,
 		.max = MAX_QP,
