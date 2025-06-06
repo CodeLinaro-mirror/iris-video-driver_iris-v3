@@ -196,8 +196,6 @@ static int iris_hfi_gen1_session_stop(struct iris_inst *inst, u32 plane)
 	if (inst->domain == DECODER) {
 		if ((V4L2_TYPE_IS_OUTPUT(plane) &&
 		     inst->state == IRIS_INST_INPUT_STREAMING) ||
-		    (V4L2_TYPE_IS_CAPTURE(plane) &&
-		     inst->state == IRIS_INST_OUTPUT_STREAMING) ||
 		    inst->state == IRIS_INST_ERROR) {
 			reinit_completion(&inst->completion);
 			iris_hfi_gen1_packet_session_cmd(inst, &pkt, HFI_CMD_SESSION_STOP);
