@@ -615,6 +615,17 @@ void iris_get_num_queued_internal_buffers(struct iris_inst *inst, u32 plane)
 		if (count)
 			dev_err(inst->core->dev, "%d buffer of type %d not released", count, internal_buf_type[i]);
 	}
+
+	if (inst->domain == DECODER)
+		buffers = &inst->buffers[BUF_PERSIST];
+	else
+		buffers = &inst->buffers[BUF_ARP];
+
+	count = 0;
+	list_for_each_entry_safe(buf, next, &buffers->list, list)
+		count++;
+	if (count)
+		dev_err(inst->core->dev, "%d buffer of type %d not released", count, buf->type);
 }
 
 int iris_alloc_and_queue_persist_bufs(struct iris_inst *inst, enum iris_buffer_type buffer_type)
