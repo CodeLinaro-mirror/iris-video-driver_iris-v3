@@ -599,12 +599,22 @@ void iris_get_num_queued_internal_buffers(struct iris_inst *inst, u32 plane)
 	u32 internal_buffer_count, i;
 	u32 count = 0;
 
-	if (V4L2_TYPE_IS_OUTPUT(plane)) {
-		internal_buf_type = platform_data->dec_ip_int_buf_tbl;
-		internal_buffer_count = platform_data->dec_ip_int_buf_tbl_size;
+	if (inst->domain == DECODER) {
+		if (V4L2_TYPE_IS_OUTPUT(plane)) {
+			internal_buf_type = platform_data->dec_ip_int_buf_tbl;
+			internal_buffer_count = platform_data->dec_ip_int_buf_tbl_size;
+		} else {
+			internal_buf_type = platform_data->dec_op_int_buf_tbl;
+			internal_buffer_count = platform_data->dec_op_int_buf_tbl_size;
+		}
 	} else {
-		internal_buf_type = platform_data->dec_op_int_buf_tbl;
-		internal_buffer_count = platform_data->dec_op_int_buf_tbl_size;
+		if (V4L2_TYPE_IS_OUTPUT(plane)) {
+			internal_buf_type = platform_data->enc_ip_int_buf_tbl;
+			internal_buffer_count = platform_data->enc_ip_int_buf_tbl_size;
+		} else {
+			internal_buf_type = platform_data->enc_op_int_buf_tbl;
+			internal_buffer_count = platform_data->enc_op_int_buf_tbl_size;
+		}
 	}
 
 	for (i = 0; i < internal_buffer_count; i++) {
