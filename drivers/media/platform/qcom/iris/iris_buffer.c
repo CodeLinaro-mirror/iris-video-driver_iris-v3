@@ -609,6 +609,7 @@ void iris_get_num_queued_internal_buffers(struct iris_inst *inst, u32 plane)
 
 	for (i = 0; i < internal_buffer_count; i++) {
 		buffers = &inst->buffers[internal_buf_type[i]];
+		count = 0;
 		list_for_each_entry_safe(buf, next, &buffers->list, list)
 			count++;
 		if (count)
