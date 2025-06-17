@@ -503,11 +503,6 @@ static int iris_hfi_gen2_handle_session_drain(struct iris_inst *inst,
 {
 	int ret = 0;
 
-	if (!(pkt->flags & HFI_FW_FLAGS_SUCCESS)) {
-		iris_inst_change_state(inst, IRIS_INST_ERROR);
-		return 0;
-	}
-
 	if (inst->sub_state & IRIS_INST_SUB_DRAIN)
 		ret = iris_inst_change_sub_state(inst, 0, IRIS_INST_SUB_INPUT_PAUSE);
 
