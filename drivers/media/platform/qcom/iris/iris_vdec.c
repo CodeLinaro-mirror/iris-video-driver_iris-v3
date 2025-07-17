@@ -80,6 +80,10 @@ static const struct iris_fmt iris_vdec_formats[] = {
 		.pixfmt = V4L2_PIX_FMT_VP9,
 		.type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
 	},
+	[IRIS_FMT_AV1] = {
+		.pixfmt = V4L2_PIX_FMT_AV1,
+		.type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
+	}
 };
 
 static const struct iris_fmt *
