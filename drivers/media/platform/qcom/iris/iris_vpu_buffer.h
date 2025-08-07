@@ -86,15 +86,6 @@ struct iris_inst;
 #define AV1D_LCU_MAX_SIZE_PELS 128
 #define AV1D_LCU_MIN_SIZE_PELS 64
 #define AV1D_MAX_TILE_COLS     64
-#define SIZE_HD  (1280)
-#define SIZE_FHD (1920)
-#define SIZE_4K  (4096)
-#define SIZE_8K  (8192)
-#define RES_HD  0
-#define RES_FHD 1
-#define RES_4K  2
-#define RES_8K  3
-#define RES     4
 #define MAX_PE_NBR_DATA_LCU32_LINE_BUFFER_SIZE 192
 #define MAX_PE_NBR_DATA_LCU16_LINE_BUFFER_SIZE 96
 #define AV1D_NUM_HW_PIC_BUF    16

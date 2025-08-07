@@ -51,15 +51,15 @@ static u32 size_av1d_hw_bin_buffer(u32 frame_width, u32 frame_height, u32 num_vp
 {
 	u32 size_yuv, size_bin_hdr, size_bin_res;
 
-		size_yuv = ((frame_width * frame_height) <= BIN_BUFFER_THRESHOLD) ?
-			((BIN_BUFFER_THRESHOLD * 3) >> 1) :
-			((frame_width * frame_height * 3) >> 1);
-		size_bin_hdr = size_yuv * AV1_CABAC_HDR_RATIO_HD_TOT;
-		size_bin_res = size_yuv * AV1_CABAC_RES_RATIO_HD_TOT;
-		size_bin_hdr = ALIGN(size_bin_hdr / num_vpp_pipes,
-							DMA_ALIGNMENT) * num_vpp_pipes;
-		size_bin_res = ALIGN(size_bin_res / num_vpp_pipes,
-							DMA_ALIGNMENT) * num_vpp_pipes;
+	size_yuv = ((frame_width * frame_height) <= BIN_BUFFER_THRESHOLD) ?
+		((BIN_BUFFER_THRESHOLD * 3) >> 1) :
+		((frame_width * frame_height * 3) >> 1);
+	size_bin_hdr = size_yuv * AV1_CABAC_HDR_RATIO_HD_TOT;
+	size_bin_res = size_yuv * AV1_CABAC_RES_RATIO_HD_TOT;
+	size_bin_hdr = ALIGN(size_bin_hdr / num_vpp_pipes,
+						DMA_ALIGNMENT) * num_vpp_pipes;
+	size_bin_res = ALIGN(size_bin_res / num_vpp_pipes,
+						DMA_ALIGNMENT) * num_vpp_pipes;
 
 	return size_bin_hdr + size_bin_res;
 }

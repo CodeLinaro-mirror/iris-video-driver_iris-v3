@@ -21,11 +21,6 @@ struct iris_hfi_frame_info {
 	u32 no_output;
 	u32 data_corrupt;
 	u32 overflow;
-	u32 subframe_input;
-	u32 cr;
-	u32 cf;
-	u32 av1_tile_rows_columns;
-	bool av1_non_uniform_tile_spacing;
 };
 
 struct iris_ts_metadata {
